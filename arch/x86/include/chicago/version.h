@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on September 15 of 2018, at 13:12 BRT
-// Last edited on April 20 of 2019, at 18:10 BRT
+// Last edited on June 16 of 2019, at 22:11 BRT
 
 #ifndef __CHICAGO_VERSION_H__
 #define __CHICAGO_VERSION_H__
@@ -10,7 +10,7 @@
 
 #define CHICAGO_MAJOR 1
 #define CHICAGO_MINOR 0
-#define CHICAGO_BUILD 43
+#define CHICAGO_BUILD 44
 #define CHICAGO_CODENAME "Cosmos"
 #define CHICAGO_ARCH ARCH
 
