@@ -4,15 +4,6 @@
 
 <p align=center>
 
-<a href="https://scan.coverity.com/projects/chosteam-chicago">
-  <img alt="Coverity Scan Build Status"
-       src="https://scan.coverity.com/projects/17765/badge.svg"/>
-</a>
-
-<a href="https://travis-ci.com/CHOSTeam/CHicago">
-  <img alt="Build Status"
-       src="https://travis-ci.com/CHOSTeam/CHicago.svg?branch=master"/>
-
 <a href="https://github.com/CHOSTeam/CHicago/releases/latest">
   <img alt="Download the latest version"
        src="https://img.shields.io/badge/Download-latest-green.svg"/>
@@ -27,7 +18,7 @@ CHicago is a operating that i have been developing since 2018 (ok, the original 
 
 For building the ISO from scratch, you need:
 
-	A Unix-like environment
+	An Unix-like environment
 	GCC and G++
 	Make
 	Bison
