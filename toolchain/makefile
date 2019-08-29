@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on November 11 of 2018, at 20:35 BRT
-# Last edited on August 25 of 2019, at 16:15 BRT
+# Last edited on August 29 of 2019, at 19:21 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -71,6 +71,8 @@ endif
 	$(NOECHO)echo Compiling the CHicago Toolchain
 	$(NOECHO)TARGET=chicago-cross make -C chicago 1>/dev/null
 	$(NOECHO)cp chicago/chasm/build/chasm $(ARCH)/bin/chasm
+	$(NOECHO)cp chicago/chc/build/chc $(ARCH)/bin/chc
+	$(NOECHO)cp chicago/chcc/build/chcc $(ARCH)/bin/chcc
 	$(NOECHO)cp chicago/chdump/build/chdump $(ARCH)/bin/chdump
 	$(NOECHO)cp chicago/chir/build/chir $(ARCH)/bin/chir
 	$(NOECHO)cp chicago/chlink/build/chlink $(ARCH)/bin/chlink
