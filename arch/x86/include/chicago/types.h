@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on May 11 of 2018, at 13:15 BRT
-// Last edited on December 19 of 2018, at 23:29 BRT
+// Last edited on September 01 of 2019, at 15:26 BRT
 
 #ifndef __CHICAGO_TYPES_H__
 #define __CHICAGO_TYPES_H__
@@ -30,13 +30,13 @@ typedef unsigned Short UInt16, *PUInt16;
 typedef unsigned Int UInt32, *PUInt32;
 typedef unsigned Long ULong, *PULong;
 typedef unsigned Long Long UInt64, *PUInt64;
+typedef unsigned Short WChar, *PWChar;
 
 /* Signed types */
 
 typedef signed Char Int8, *PInt8;
 typedef signed Short Int16, *PInt16;
 typedef signed Int Int32, *PInt32;
-typedef signed Int WChar, *PWChar;
 typedef signed Long Long Int64, *PInt64;
 
 /* Define our IntPtr type */

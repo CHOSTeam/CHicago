@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on July 15 of 2018, at 19:05 BRT
-// Last edited on March 29 of 2019, at 19:11 BRT
+// Last edited on September 01 of 2019, at 15:27 BRT
 
 #include <chicago/alloc.h>
 
@@ -99,7 +99,7 @@ Boolean StrCompare(PChar dest, PChar src) {
 }
 
 Boolean StrCompareW(PWChar dest, PWChar src) {
-	return StrCompareMemory(dest, src, StrGetLengthW(dest) * 4);					// Just redirect to the StrCompareMemory function
+	return StrCompareMemory(dest, src, StrGetLengthW(dest) * 2);					// Just redirect to the StrCompareMemory function
 }
 
 PChar StrCopy(PChar dest, PChar src) {
@@ -164,7 +164,7 @@ static UIntPtr StrFormatWriteInteger(PChar str, UIntPtr n, UIntPtr data, UInt8 b
 		return 30 - i;																// Nope, just return the length
 	}
 	
-	for (len = i, i = 30 - i - 1; data && i >= 0; i--, data /= base) {				// Yes we have it, so let's write!
+	for (len = 30 - i, i = 30 - i - 1; data && i >= 0; i--, data /= base) {			// Yes we have it, so let's write!
 		str[i] = L"0123456789ABCDEF"[data % base];
 	}
 	
