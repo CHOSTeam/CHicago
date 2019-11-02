@@ -1,0 +1,153 @@
+diff -urN a/bfd/config.bfd b/bfd/config.bfd
+--- a/bfd/config.bfd	2019-10-27 13:50:52.832910900 -0300
++++ b/bfd/config.bfd	2019-10-27 13:24:24.548312700 -0300
+@@ -608,6 +608,18 @@
+     targ_defvec=i386_aout_bsd_vec
+     targ_underscore=yes
+     ;;
++  i[3-7]86-*-chicago*)
++    targ_defvec=i386_elf32_vec
++    targ_selvecs=
++    targ64_selvecs=x86_64_elf64_vec
++    ;;
++#ifdef BFD64
++  x86_64-*-chicago*)
++    targ_defvec=x86_64_elf64_vec
++    targ_selvecs=i386_elf32_vec
++    want64=true
++    ;;
++#endif
+   i[3-7]86-*-dragonfly*)
+     targ_defvec=i386_elf32_vec
+     targ_selvecs=iamcu_elf32_vec
+--- a/config.sub	2019-10-27 13:50:48.873474500 -0300
++++ b/config.sub	2019-10-27 13:18:27.255467000 -0300
+@@ -1346,7 +1346,7 @@
+ 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
+ 	     | sym* | kopensolaris* | plan9* \
+ 	     | amigaos* | amigados* | msdos* | newsos* | unicos* | aof* \
+-	     | aos* | aros* | cloudabi* | sortix* \
++	     | aos* | aros* | cloudabi* | sortix* | chicago* \
+ 	     | nindy* | vxsim* | vxworks* | ebmon* | hms* | mvs* \
+ 	     | clix* | riscos* | uniplus* | iris* | isc* | rtu* | xenix* \
+ 	     | knetbsd* | mirbsd* | netbsd* \
+--- a/gas/configure.tgt	2019-10-27 13:50:50.709380500 -0300
++++ b/gas/configure.tgt	2019-10-27 13:26:08.738805900 -0300
+@@ -216,6 +216,7 @@
+ 
+   i386-*-beospe*)			fmt=coff em=pe ;;
+   i386-*-beos*)				fmt=elf ;;
++  i386-*-chicago*)		fmt=elf ;;
+   i386-*-elfiamcu)			fmt=elf arch=iamcu ;;
+   i386-*-elf*)				fmt=elf ;;
+   i386-*-fuchsia*)			fmt=elf ;;
+--- a/ld/configure.tgt	2019-10-27 13:50:49.222492600 -0300
++++ b/ld/configure.tgt	2019-10-27 13:35:29.002297900 -0300
+@@ -248,6 +248,15 @@
+ i[3-7]86-*-bsd)		targ_emul=i386bsd ;;
+ i[3-7]86-*-bsd386)	targ_emul=i386bsd ;;
+ i[3-7]86-*-bsdi*)	targ_emul=i386bsd ;;
++i[3-7]86-*-chicago*)
++			targ_emul=elf_i386_chicago
++			targ_extra_emuls=elf_i386
++			targ64_extra_emuls="elf_x86_64_chicago elf_x86_64"
++			;;
++x86_64-*-chicago*)
++			targ_emul=elf_x86_64_chicago
++			targ_extra_emuls="elf_i386_chicago elf_x86_64 elf_i386"
++			;;
+ i[3-7]86-*-linux-*)	targ_emul=elf_i386
+ 			targ_extra_emuls="elf_iamcu"
+ 			targ64_extra_emuls="elf_x86_64 elf32_x86_64 elf_l1om elf_k1om"
+@@ -782,6 +791,10 @@
+ NATIVE_LIB_DIRS='/usr/local/lib /lib /usr/lib'
+ case "${target}" in
+ 
++*-*-chicago*)
++  NATIVE_LIB_DIRS='/System/Libraries /Development/Libraries'
++  ;;
++
+ *-*-dragonfly*)
+   NATIVE_LIB_DIRS='/lib /usr/lib /usr/pkg/lib /usr/local/lib'
+   ;;
+diff -urN a/ld/emulparams/elf_i386_chicago.sh b/ld/emulparams/elf_i386_chicago.sh
+--- a/ld/emulparams/elf_i386_chicago.sh	1969-12-31 21:00:00.000000000 -0300
++++ b/ld/emulparams/elf_i386_chicago.sh	2019-10-27 13:58:04.696347800 -0300
+@@ -0,0 +1,4 @@
++. ${srcdir}/emulparams/elf_i386.sh
++GENERATE_SHLIB_SCRIPT=yes
++GENERATE_PIE_SCRIPT=yes
++ENTRY=AppEntry
+--- a/ld/emulparams/elf_x86_64_chicago.sh	1969-12-31 21:00:00.000000000 -0300
++++ b/ld/emulparams/elf_x86_64_chicago.sh	2019-10-27 13:58:08.871903600 -0300
+@@ -0,0 +1,2 @@
++. ${srcdir}/emulparams/elf_x86_64.sh
++ENTRY=AppEntry
+--- a/ld/Makefile.am	2019-10-27 13:50:50.380674200 -0300
++++ b/ld/Makefile.am	2019-10-27 13:33:17.189492500 -0300
+@@ -284,6 +284,7 @@
+ 	eelf32xstormy16.c \
+ 	eelf32xtensa.c \
+ 	eelf_i386.c \
++	eelf_i386_chicago.c \
+ 	eelf_i386_be.c \
+ 	eelf_i386_fbsd.c \
+ 	eelf_i386_ldso.c \
+@@ -455,6 +456,7 @@
+ 	eelf_k1om.c \
+ 	eelf_k1om_fbsd.c \
+ 	eelf_x86_64.c \
++	eelf_x86_64_chicago.c \
+ 	eelf_x86_64_cloudabi.c \
+ 	eelf_x86_64_fbsd.c \
+ 	eelf_x86_64_nacl.c \
+@@ -773,6 +775,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf32xstormy16.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf32xtensa.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386.Pc@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_chicago.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_be.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_ldso.Pc@am__quote@
+@@ -940,6 +943,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_k1om.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_k1om_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64.Pc@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_chicago.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_cloudabi.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_nacl.Pc@am__quote@
+--- a/ld/Makefile.in	2019-10-27 13:50:49.170067200 -0300
++++ b/ld/Makefile.in	2019-10-27 13:34:22.358239100 -0300
+@@ -771,6 +771,7 @@
+ 	eelf32xstormy16.c \
+ 	eelf32xtensa.c \
+ 	eelf_i386.c \
++	eelf_i386_chicago.c \
+ 	eelf_i386_be.c \
+ 	eelf_i386_fbsd.c \
+ 	eelf_i386_ldso.c \
+@@ -941,6 +942,7 @@
+ 	eelf_k1om.c \
+ 	eelf_k1om_fbsd.c \
+ 	eelf_x86_64.c \
++	eelf_x86_64_chicago.c \
+ 	eelf_x86_64_cloudabi.c \
+ 	eelf_x86_64_fbsd.c \
+ 	eelf_x86_64_nacl.c \
+@@ -1377,6 +1379,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf64tilegx.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf64tilegx_be.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_chicago.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_be.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_fbsd.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_ldso.Po@am__quote@
+@@ -1390,6 +1393,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_l1om_fbsd.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_s390.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_chicago.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_cloudabi.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_fbsd.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_nacl.Po@am__quote@

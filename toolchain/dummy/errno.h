@@ -1,0 +1,1 @@
+// WARNING: This is a dummy errno.h just for compiling the libgcc, DON'T USE IT!

@@ -1,0 +1,1 @@
+// WARNING: This is a dummy time.h just for compiling the libgcc, DON'T USE IT!

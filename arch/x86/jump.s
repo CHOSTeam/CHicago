@@ -1,72 +1,25 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on December 21 of 2018, at 23:21 BRT
-// Last edited on April 19 of 2019, at 17:47 BRT
+// Last edited on October 28 of 2019, at 16:52 BRT
 
 .ifdef ARCH_64
 .code64
 
-
-JumpGDTStart:
-	.int 0x00000000, 0x00000000
-	.byte 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x98, 0xCF, 0x00
-	.byte 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x92, 0xCF, 0x00
-	.byte 0xFF, 0xFF, 0x00, 0x00, 0x00, 0xF8, 0x0F, 0x00
-	.byte 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x92, 0x0F, 0x00
-JumpGDTEnd:
-JumpGDTPointer:
-	.word JumpGDTEnd - JumpGDTStart - 1
-	.int JumpGDTStart
-
-JumpEAX: .int 0
-JumpEBX: .int 0
-JumpECX: .int 0
-JumpEDX: .int 0
-JumpESI: .int 0
-JumpEDI: .int 0
-.global ArchJumpInt
-ArchJumpInt:
-	mov %ecx, (JumpEAX)
-	mov %edx, (JumpEBX)
-	mov %r8, %rax
-	mov %eax, (JumpECX)
-	mov %r9, %rax
-	mov %eax, (JumpEDX)
-	mov 0x28(%rsp), %rax
-	mov %rax, (JumpESI)
-	mov 0x30(%rsp), %rax
-	mov %eax, (JumpEDI)
-	
-	cli
-	push $0x10
-	push $1f
-	lretq
-1:
-.code32
-	mov %cr0, %eax
-	and $0x7FFEFFFF, %eax
-	mov %eax, %cr0
-	mov $0xC0000080, %ecx
-	rdmsr
-	and $0xFFFFFEFF, %eax
-	wrmsr
-	mov %cr4, %eax
-	and $0xFFFFFFDF, %eax
-	mov %eax, %cr4
-	
-	mov (JumpEAX), %eax
-	mov (JumpEBX), %ebx
-	mov (JumpECX), %ecx
-	mov (JumpEDX), %edx
-	mov (JumpESI), %esi
-	mov (JumpEDI), %edi
-	
-	jmp *%eax
+.global Jump
+Jump:
+	mov %rcx, %rax
+	mov %rdx, %rbx
+	mov %r8, %rcx
+	mov %r9, %rdx
+	mov 0x28(%rsp), %rsi
+	mov 0x30(%rsp), %rdi
+	jmp *%rax
 .else
 .code32
 
-.global _ArchJumpInt
-_ArchJumpInt:
+.global _Jump
+_Jump:
 	mov 24(%esp), %edi
 	mov 20(%esp), %esi
 	mov 16(%esp), %edx
