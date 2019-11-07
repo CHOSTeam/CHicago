@@ -1,12 +1,12 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 31 of 2019, at 18:03 BRT
-// Last edited on November 03 of 2019, at 16:06 BRT
+// Last edited on November 07 of 2019, at 19:46 BRT
 
 #include <chicago/file.h>
 
 Void AppEntry(Void) {
-	WChar str[] = L"Hello from /System/Programs/sesmgr.che!";				// The string that we are going to write
+	WChar str[] = L"Hello from /System/Programs/osmngr.che!";				// The string that we are going to write
 	IntPtr con = FsOpenFile(L"/Devices/Console");							// Try to open the console file
 	
 	if (con == -1) {

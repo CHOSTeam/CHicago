@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on October 31 of 2019, at 17:51 BRT
-# Last edited on November 03 of 2019, at 20:13 BRT
+# Last edited on November 05 of 2019, at 16:01 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -32,7 +32,7 @@ OBJECTS := main.c.o
 
 ARCH_OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/$(ARCH)/,$(ARCH_OBJECTS))
 OBJECTS := $(addprefix build/$(FULL_ARCH)/,$(OBJECTS))
-OUTPUT := build/sesmgr-$(FULL_ARCH).che
+OUTPUT := build/osmngr-$(FULL_ARCH).che
 
 ifneq ($(VERBOSE),true)
 NOECHO := @
@@ -64,8 +64,8 @@ install: all
 ifeq ($(UNSUPPORTED_ARCH),true)
 	$(error Unsupported architecture $(ARCH), subarch $(SUBARCH))
 endif
-	$(NOECHO)echo Installing sesmgr.che
-	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(PROG_DIR)/sesmgr.che
+	$(NOECHO)echo Installing osmngr.che
+	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(PROG_DIR)/osmngr.che
 
 $(OUTPUT): $(ARCH_OBJECTS) $(OBJECTS)
 ifeq ($(UNSUPPORTED_ARCH),true)

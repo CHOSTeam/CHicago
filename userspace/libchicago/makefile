@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on October 29 of 2019, at 18:21 BRT
-# Last edited on November 03 of 2019, at 20:13 BRT
+# Last edited on November 06 of 2019, at 18:48 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -26,7 +26,8 @@ ifeq ($(ARCH),x86)
 		UNSUPPORTED_ARCH := true
 	endif
 	
-	ARCH_OBJECTS := io/file.c.o
+	ARCH_OBJECTS := exec/exec.c.o exec/lib.c.o
+	ARCH_OBJECTS += io/file.c.o
 	ARCH_OBJECTS += mm/alloc.c.o mm/virt.c.o
 	ARCH_OBJECTS += sys/process.c.o sys/version.c.o
 else
