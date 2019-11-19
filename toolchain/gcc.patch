@@ -25,15 +25,15 @@ diff -urN a/config.sub b/config.sub
      powerpc-*-eabi*    | \
 --- a/gcc/config/chicago.h	1969-12-31 21:00:00.000000000 -0300
 +++ b/gcc/config/chicago.h	2019-10-27 14:18:25.141363500 -0300
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,34 @@
 +#undef TARGET_CHICAGO
 +#define TARGET_CHICAGO 1
 +
 +#undef STANDARD_STARTFILE_PREFIX
-+#define STANDARD_STARTFILE_PREFIX "/System/Libraries/ /Development/Libraries/"
++#define STANDARD_STARTFILE_PREFIX "/Development/Libraries/"
 +
 +#undef LIB_SPEC
-+#define LIB_SPEC "-lc" /* link everything against the C standard library */
++#define LIB_SPEC "%{kdriver:-lchkrnl;:-lc}" /* link everything against the C standard library (except the kernel drivers, link those with the kernel) */
 +
 +#undef LIBSTDCXX
 +#define LIBSTDCXX "cxx" /* CHicago's c++ library is called libcxx (the gcc's default is called libstdc++) */
@@ -41,14 +41,17 @@ diff -urN a/config.sub b/config.sub
 +/* Files that are linked before user code.
 +   The %s tells GCC to look for these files in the library directory. */
 +#undef STARTFILE_SPEC
-+#define STARTFILE_SPEC "%{!shared:crt0.o%s} crti.o%s %{!shared:crtbegin.o%s}"
++#define STARTFILE_SPEC "crti.o%s %{shared|!no-pie:crtbeginS.o%s;:crtbegin.o%s} %{kdriver:kdriver.o%s}"
 +
 +/* Files that are linked after user code. */
 +#undef ENDFILE_SPEC
-+#define ENDFILE_SPEC "%{!shared:crtend.o%s} crtn.o%s"
++#define ENDFILE_SPEC "%{shared|!no-pie:crtendS.o%s;:crtend.o%s} crtn.o%s"
 +
 +#undef LINK_SPEC
-+#define LINK_SPEC "%{shared:-shared} %{static:-static} %{!shared: %{!static: %{rdynamic:-export-dynamic}}} -z max-page-size=4096"
++#define LINK_SPEC "%{shared:-shared} %{static:-static} %{!shared: %{!static: -dynamic-linker /System/Boot/chkrnl.elf %{rdynamic:-export-dynamic}}} -z max-page-size=4096"
++
++#undef CC1_SPEC
++#define CC1_SPEC "%{cc1_cpu} %{kdriver:-fno-builtin} -fno-plt"
 +
 +/* Don't automatically add extern "C" { } around header files. */
 +#undef  SYSTEM_IMPLICIT_EXTERN_C
@@ -57,9 +60,18 @@ diff -urN a/config.sub b/config.sub
 +/* Additional predefined macros. */
 +#undef TARGET_OS_CPP_BUILTINS
 +#define TARGET_OS_CPP_BUILTINS() do { builtin_define ("__chicago__"); builtin_assert ("system=chicago"); } while(0);
+--- a/gcc/config/chicago.opt	1969-12-31 21:00:00.000000000 -0300
++++ b/gcc/config/chicago.opt	2019-11-14 22:22:00.000000000 -0300
+@@ -0,0 +1,6 @@
++; chicago.opt
++; CHicago-specific compiler options.
++
++kdriver
++Target RejectNegative
++Link as a kernel driver.
 --- a/gcc/config.gcc	2019-10-27 13:14:44.579559400 -0300
 +++ b/gcc/config.gcc	2019-10-27 14:09:37.451824900 -0300
-@@ -675,6 +675,13 @@
+@@ -675,6 +675,14 @@
  
  # Common parts for widely ported systems.
  case ${target} in
@@ -69,11 +81,12 @@ diff -urN a/config.sub b/config.sub
 +  default_use_cxa_atexit=yes
 +  use_gcc_stdint=wrap
 +  native_system_header_dir=/Development/Headers
++  extra_options="${extra_options} chicago.opt"
 +  ;;
  *-*-darwin*)
    tmake_file="t-darwin "
    tm_file="${tm_file} darwin.h"
-@@ -1609,6 +1616,12 @@
+@@ -1609,6 +1617,12 @@
  		dwarf2=no
  	fi
  	;;
@@ -93,11 +106,11 @@ diff -urN a/config.sub b/config.sub
  	tmake_file="$tmake_file pa/t-openbsd"
  	;;
 +i[34567]86-*-chicago*)
-+	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	extra_parts="$extra_parts crti.o crtbegin.o crtbeginS.o crtend.o crtendS.o crtn.o"
 +	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
 +	;;
 +x86_64-*-chicago*)
-+	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	extra_parts="$extra_parts crti.o crtbegin.o crtbeginS.o crtend.o crtendS.o crtn.o"
 +	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
 +	;;
  i[34567]86-*-darwin*)

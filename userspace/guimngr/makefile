@@ -1,6 +1,6 @@
 # File author is Ítalo Lima Marconato Matias
 #
-# Created on October 29 of 2019, at 18:21 BRT
+# Created on October 31 of 2019, at 17:51 BRT
 # Last edited on November 15 of 2019, at 11:56 BRT
 
 ARCH ?= x86
@@ -8,8 +8,9 @@ VERBOSE ?= false
 DEBUG ?= false
 
 SYSROOT_DIR ?=
-LIB_DIR ?= System/Libraries
-INC_DIR ?= Development/Headers
+PROG_DIR ?= System/Programs
+THEME_DIR ?= System/Themes
+FONT_DIR ?= System/Fonts
 
 ifeq ($(ARCH),x86)
 	SUBARCH ?= 32
@@ -25,21 +26,16 @@ ifeq ($(ARCH),x86)
 	else
 		UNSUPPORTED_ARCH := true
 	endif
-	
-	ARCH_OBJECTS := exec/exec.c.o exec/lib.c.o
-	ARCH_OBJECTS += io/file.c.o
-	ARCH_OBJECTS += mm/alloc.c.o mm/virt.c.o
-	ARCH_OBJECTS += sys/process.c.o sys/version.c.o
 else
 	UNSUPPORTED_ARCH := true
 endif
 
-OBJECTS := ds/list.c.o
-OBJECTS += sys/string.c.o
+OBJECTS := display.c.o img.c.o main.c.o renderer.c.o
+OBJECTS += window.c.o
 
 ARCH_OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/$(ARCH)/,$(ARCH_OBJECTS))
 OBJECTS := $(addprefix build/$(FULL_ARCH)/,$(OBJECTS))
-OUTPUT := build/libchicago-$(FULL_ARCH).so
+OUTPUT := build/guimngr-$(FULL_ARCH).che
 
 ifneq ($(VERBOSE),true)
 NOECHO := @
@@ -71,10 +67,12 @@ install: all
 ifeq ($(UNSUPPORTED_ARCH),true)
 	$(error Unsupported architecture $(ARCH), subarch $(SUBARCH))
 endif
-	$(NOECHO)echo Installing headers
-	$(NOECHO)cp -RT include $(SYSROOT_DIR)/$(INC_DIR)
-	$(NOECHO)echo Installing libchicago.so
-	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(LIB_DIR)/libchicago.so
+	$(NOECHO)echo Installing guimngr.che
+	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(PROG_DIR)/guimngr.che
+	$(NOECHO)echo Installing the themes
+	$(NOECHO)cp -RT Themes/ $(SYSROOT_DIR)/$(THEME_DIR)/
+	$(NOECHO)echo Installing the fonts
+	$(NOECHO)cp -RT Fonts/ $(SYSROOT_DIR)/$(FONT_DIR)/
 
 $(OUTPUT): $(ARCH_OBJECTS) $(OBJECTS)
 ifeq ($(UNSUPPORTED_ARCH),true)
@@ -83,7 +81,7 @@ endif
 	$(NOECHO)echo Linking $@
 	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 	$(NOECHO)
-	$(NOECHO)$(TARGET)-gcc -shared -nostdlib -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS)
+	$(NOECHO)$(TARGET)-gcc -nostdlib -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS) -lchicago
 
 build/$(FULL_ARCH)/%.s.o: %.s
 ifeq ($(UNSUPPORTED_ARCH),true)

@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on November 11 of 2018, at 20:35 BRT
-# Last edited on October 28 of 2019, at 17:16 BRT
+# Last edited on November 15 of 2019, at 16:27 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -87,9 +87,9 @@ endif
 	$(NOECHO)if [ -d $(ARCH)-$(SUBARCH)/$(MAIN_TARGET) ]; then exit 1; fi
 	$(NOECHO)if [ -d build ]; then rm -rf build; fi
 	$(NOECHO)mkdir build
-	$(NOECHO)mkdir -p $@/../sysroot/{Development,System}
+	$(NOECHO)mkdir -p $@/../sysroot/{Development,System,Libraries,Programs}
 	$(NOECHO)mkdir -p $@/../sysroot/Development/{Headers,Libraries,Programs,Sources}
-	$(NOECHO)mkdir -p $@/../sysroot/System/{Configurations,Libraries,Programs}
+	$(NOECHO)mkdir -p $@/../sysroot/System/{Boot,Configurations,Drivers,Fonts,Libraries,Programs,Themes}
 	$(NOECHO)cp -RT dummy/ $@/../sysroot/Development/Headers/
 	$(NOECHO)echo Downloading Binutils source code
 	$(NOECHO)cd build && wget -4 -q https://ftp.gnu.org/gnu/binutils/binutils-2.33.1.tar.gz
@@ -107,11 +107,11 @@ endif
 	$(NOECHO)mkdir build/binutils-2.33.1/build && cd build/binutils-2.33.1/build && ../configure --target=$(MAIN_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(MAIN_TARGET_BINUTILS_SYSROOT) --enable-shared --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install -j$(BUILD_CORES) 1>/dev/null 2>/dev/null
 	$(NOECHO)echo Compiling GCC \($(MAIN_TARGET)\)
 ifeq ($(MAIN_TARGET_NO_LIBGCC),true)
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(MAIN_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(MAIN_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(MAIN_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(MAIN_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc 1>/dev/null 2>/dev/null
 else ifeq ($(MAIN_TARGET_MCMODEL_LARGE),true)
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(MAIN_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(MAIN_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make all-target-libgcc -j$(BUILD_CORES) CFLAGS_FOR_TARGET='-g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(MAIN_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(MAIN_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make all-target-libgcc -j$(BUILD_CORES) CFLAGS_FOR_TARGET='-fno-plt -g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
 else
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(MAIN_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(MAIN_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc all-target-libgcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(MAIN_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(MAIN_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc all-target-libgcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
 endif
 
 ifneq ($(SECOND_TARGET),)
@@ -126,11 +126,11 @@ endif
 	$(NOECHO)mkdir build/binutils-2.33.1/build && cd build/binutils-2.33.1/build && ../configure --target=$(SECOND_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(SECOND_TARGET_BINUTILS_SYSROOT) --enable-shared --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install -j$(BUILD_CORES) 1>/dev/null 2>/dev/null
 	$(NOECHO)echo Compiling GCC \($(SECOND_TARGET)\)
 ifeq ($(SECOND_TARGET_NO_LIBGCC),true)
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(SECOND_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(SECOND_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(SECOND_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(SECOND_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc 1>/dev/null 2>/dev/null
 else ifeq ($(SECOND_TARGET_MCMODEL_LARGE),true)
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(SECOND_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(SECOND_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make all-target-libgcc -j$(BUILD_CORES) CFLAGS_FOR_TARGET='-g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(SECOND_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(SECOND_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make all-target-libgcc -j$(BUILD_CORES) CFLAGS_FOR_TARGET='-fno-plt -g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
 else
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(SECOND_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(SECOND_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc all-target-libgcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(SECOND_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(SECOND_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc all-target-libgcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
 endif
 endif
 
@@ -146,11 +146,11 @@ endif
 	$(NOECHO)mkdir build/binutils-2.33.1/build && cd build/binutils-2.33.1/build && ../configure --target=$(THIRD_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(THIRD_TARGET_BINUTILS_SYSROOT) --enable-shared --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install -j$(BUILD_CORES) 1>/dev/null 2>/dev/null
 	$(NOECHO)echo Compiling GCC \($(THIRD_TARGET)\)
 ifeq ($(THIRD_TARGET_NO_LIBGCC),true)
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(THIRD_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(THIRD_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(THIRD_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(THIRD_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc 1>/dev/null 2>/dev/null
 else ifeq ($(THIRD_TARGET_MCMODEL_LARGE),true)
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(THIRD_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(THIRD_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make all-target-libgcc -j$(BUILD_CORES) CFLAGS_FOR_TARGET='-g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(THIRD_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(THIRD_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make all-target-libgcc -j$(BUILD_CORES) CFLAGS_FOR_TARGET='-fno-plt -g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
 else
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(THIRD_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(THIRD_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc all-target-libgcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(THIRD_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(THIRD_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc all-target-libgcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
 endif
 endif
 
@@ -166,10 +166,10 @@ endif
 	$(NOECHO)mkdir build/binutils-2.33.1/build && cd build/binutils-2.33.1/build && ../configure --target=$(FOURTH_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(FOURTH_TARGET_BINUTILS_SYSROOT) --enable-shared --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install -j$(BUILD_CORES) 1>/dev/null 2>/dev/null
 	$(NOECHO)echo Compiling GCC \($(FOURTH_TARGET)\)
 ifeq ($(FOURTH_TARGET_NO_LIBGCC),true)
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(FOURTH_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(FOURTH_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(FOURTH_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(FOURTH_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc 1>/dev/null 2>/dev/null
 else ifeq ($(FOURTH_TARGET_MCMODEL_LARGE),true)
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(FOURTH_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(FOURTH_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make all-target-libgcc -j$(BUILD_CORES) CFLAGS_FOR_TARGET='-g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(FOURTH_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(FOURTH_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make all-target-libgcc -j$(BUILD_CORES) CFLAGS_FOR_TARGET='-fno-plt -g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
 else
-	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(FOURTH_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(FOURTH_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror 1>/dev/null 2>/dev/null && make all-gcc all-target-libgcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
+	$(NOECHO)mkdir build/gcc-9.2.0/build && cd build/gcc-9.2.0/build && ../configure --target=$(FOURTH_TARGET) --prefix=$(ROOT_DIR)/$(ARCH)-$(SUBARCH) $(FOURTH_TARGET_GCC_SYSROOT) --enable-languages=c,c++ --enable-shared --enable-default-pie --disable-nls --disable-werror CFLAGS_FOR_TARGET='-fno-plt' 1>/dev/null 2>/dev/null && make all-gcc all-target-libgcc -j$(BUILD_CORES) 1>/dev/null 2>/dev/null && make install-gcc install-target-libgcc 1>/dev/null 2>/dev/null
 endif
 endif

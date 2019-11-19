@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on October 31 of 2019, at 17:51 BRT
-# Last edited on November 05 of 2019, at 16:01 BRT
+# Last edited on November 15 of 2019, at 11:56 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -20,7 +20,7 @@ ifeq ($(ARCH),x86)
 	else ifeq ($(SUBARCH),64)
 		FULL_ARCH := $(ARCH)-$(SUBARCH)
 		TARGET ?= x86_64-chicago
-		ARCH_CFLAGS += -DARCH_64 -mno-mmx
+		ARCH_CFLAGS += -DARCH_64
 	else
 		UNSUPPORTED_ARCH := true
 	endif
@@ -74,7 +74,7 @@ endif
 	$(NOECHO)echo Linking $@
 	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 	$(NOECHO)
-	$(NOECHO)$(TARGET)-gcc -nostdlib -fno-plt -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS) -lchicago
+	$(NOECHO)$(TARGET)-gcc -nostdlib -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS) -lchicago
 
 build/$(FULL_ARCH)/%.s.o: %.s
 ifeq ($(UNSUPPORTED_ARCH),true)
@@ -91,7 +91,7 @@ endif
 	$(NOECHO)echo Compiling $<
 	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 ifeq ($(DEBUG),yes)
-	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -DDEBUG -g -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-plt -fno-builtin -fshort-wchar -O0 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
+	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -DDEBUG -g -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-builtin -fshort-wchar -O0 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
 else
-	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-plt -fno-builtin -fshort-wchar -funroll-loops -fomit-frame-pointer -ffast-math -O3 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
+	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-builtin -fshort-wchar -funroll-loops -fomit-frame-pointer -ffast-math -O3 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
 endif

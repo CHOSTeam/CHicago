@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 29 of 2018, at 19:12 BRT
-// Last edited on October 29 of 2019, at 19:34 BRT
+// Last edited on November 11 of 2019, at 15:43 BRT
 
 #ifndef __CHICAGO_PROCESS_H__
 #define __CHICAGO_PROCESS_H__
@@ -27,7 +27,6 @@ Void PsLock(PLock lock);
 Void PsUnlock(PLock lock);
 Void PsExitThread(UIntPtr ret);
 Void PsExitProcess(UIntPtr ret);
-Void PsForceSwitch(Void);
 
 #ifdef __cplusplus
 }

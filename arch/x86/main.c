@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 24 of 2018, at 20:15 BRT
-// Last edited on October 29 of 2019, at 15:58 BRT
+// Last edited on November 15 of 2019, at 23:17 BRT
 
 #include "elf.h"
 #include "lib.h"
@@ -19,7 +19,8 @@ VOID WaitKeystroke(VOID);
 BOOLEAN CompareMemory(VOID *m1, VOID *m2, UINTN Count);
 BOOLEAN SetVideoMode(VOID);
 INT32 GetMemoryMap(VOID);
-VOID Jump(UINTN Entry, UINTN BootDev, UINTN MMapAddress, UINTN MMapCount, UINTN FrameBufferData, UINTN Options);
+BOOLEAN LoadSymbols(UINTN Start, EFI_FILE *Kernel, ELF_HEADER Header, UINTN *Size);
+VOID Jump(UINTN Entry, UINTN BootDev, UINTN MMapAddress, UINTN MMapCount, UINTN FrameBufferData, UINTN Options, UINTN Symbols, UINTN SymbolsSize);
 
 EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	EFI_STATUS Status;
@@ -34,7 +35,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	UINTN Entry;
 	INT32 MMapCount;
 	UINTN MSize, MKey, DSize;
-	UINTN BootOptions = 0x00;
+	UINTN BootOptions = 0x00, KernelEnd = 0, Symbols, SymbolsSize;
 	
 	Initialize(ImageHandle, SystemTable);																// Initialize some stuff
 	
@@ -169,6 +170,10 @@ c:	Status = OpenFile(FileSystemRoot, &Config, L"\\EFI\\BOOT\\bootmgr.conf");				
 	for (UINTN i = 0; i < Header.ph_num; i++) {															// Let's load all the data and code!
 		ELF_PHDR *phdr = (ELF_PHDR*)&PHdrs[i];															// Get this program header
 		
+		if (phdr->paddr + phdr->msize > KernelEnd) {													// Save the KernelEnd (in case this is the kernel end)
+			KernelEnd = phdr->paddr + phdr->msize;
+		}
+		
 		Status = AllocatePages(phdr->msize, phdr->paddr); 												// Allocate the pages at the physical address
 		
 		if (EFI_ERROR(Status)) {
@@ -204,6 +209,18 @@ c:	Status = OpenFile(FileSystemRoot, &Config, L"\\EFI\\BOOT\\bootmgr.conf");				
 		return Status;
 	}
 	
+	if ((KernelEnd % 0x1000) != 0) {																	// Align the kernel end
+		Symbols = KernelEnd + (0x1000 - (KernelEnd % 0x1000));
+	} else {
+		Symbols = KernelEnd;
+	}
+	
+	if (!LoadSymbols(Symbols, Kernel, Header, &SymbolsSize)) {											// Load the kernel symbols
+		PrintString(L"Couldn't load the kernel symbols\r\n");
+		WaitKeystroke();
+		return Status;
+	}
+	
 	BS->GetMemoryMap(&MSize, NULL, &MKey, &DSize, NULL);												// We need the MapKey
 	
 	Status = BS->ExitBootServices(ImageHandle, MKey);													// Call ExitBootServices!
@@ -214,7 +231,7 @@ c:	Status = OpenFile(FileSystemRoot, &Config, L"\\EFI\\BOOT\\bootmgr.conf");				
 		return Status;
 	}
 	
-	Jump(Entry, 0x10000, 0x3000, MMapCount, 0x2000, BootOptions);										// Jump into the kernel!
+	Jump(Entry, 0x10000, 0x3000, MMapCount, 0x2000, BootOptions, Symbols, SymbolsSize);					// Jump into the kernel!
 	
 	return EFI_LOAD_ERROR;
 }
@@ -324,6 +341,16 @@ BOOLEAN CompareMemory(VOID *m1, VOID *m2, UINTN Count) {
 	return TRUE;
 }
 
+UINTN GetCStringLength(CHAR8 *String) {
+	UINTN Count = 0;																					// Just increase the count variable until we reach the end of string character
+	
+	while (*String++) {
+		Count++;
+	}
+	
+	return Count;
+}
+
 BOOLEAN SetVideoMode(VOID) {
 	UINTN *Data = (UINTN*)0x2000;
 	EFI_HANDLE *HBuf;
@@ -398,7 +425,7 @@ INT32 GetMemoryMap(VOID) {
 	
 	for (UINTN i = 0; i < Size / DSize; i++) {															// Let's go!
 		EFI_MEMORY_DESCRIPTOR *emap = (EFI_MEMORY_DESCRIPTOR*)((UINTN)Map + i * DSize);					// Get the map entry
-		UINTN *cmap = (UINTN*)(0x3000 + (i * (3 * sizeof(UINTN))));
+		UINTN *cmap = (UINTN*)(0x3000 + (i * sizeof(UINTN) * 3));
 		
 		*cmap++ = (UINTN)emap->PhysicalStart;															// Set the base
 		*cmap++ = (UINTN)emap->NumberOfPages * 0x1000;													// Set the number of pages
@@ -419,4 +446,100 @@ INT32 GetMemoryMap(VOID) {
 	BS->FreePool(Map);																					// Free the allocated space
 	
 	return Size / DSize;
+}
+
+BOOLEAN LoadSymbols(UINTN Start, EFI_FILE *Kernel, ELF_HEADER Header, UINTN *Size) {
+	ELF_SHDR *SHdrs;
+	UINTN StrTabIdx = 0, StrTabOff = 0, StrTabSz = 0, SymTabOff = 0, SymTabSz = 0, SymTabEntSz = 0;
+	CHAR8 *StrTab;
+	ELF_SYMBOL *SymTab;
+	
+	if (EFI_ERROR(BS->AllocatePool(EfiBootServicesData, Header.sh_num * Header.sh_ent_size,
+								   (VOID**)&SHdrs))) {													// Allocate space for reading the section headers
+		return FALSE;
+	} else if (EFI_ERROR(ReadFile(Kernel, Header.sh_off, Header.sh_num * Header.sh_ent_size,
+								  SHdrs))) {															// Read the section headers
+		return FALSE;
+	}
+	
+	for (UINTN i = 0; i < Header.sh_num; i++) {															// Let's search for the symbol table and for the string table
+		ELF_SHDR *shdr = (ELF_SHDR*)&SHdrs[i];															// Get this section header
+		
+		if (shdr->type == 0X02) {																		// Symbol table?
+			StrTabIdx = shdr->link;																		// Yes, save the info!
+			SymTabOff = shdr->offset;
+			SymTabSz = shdr->size;
+			SymTabEntSz = shdr->ent_size;
+		}
+	}
+	
+	if (SymTabOff == 0) {																				// We got it?
+		BS->FreePool(SHdrs);																			// Nope
+		return FALSE;
+	}
+	
+	ELF_SHDR *shdr = (ELF_SHDR*)&SHdrs[StrTabIdx];														// Save the info about the strtab
+	
+	StrTabOff = shdr->offset;
+	StrTabSz = shdr->size;
+	
+	BS->FreePool(SHdrs);
+	
+	if (EFI_ERROR(BS->AllocatePool(EfiBootServicesData, StrTabSz, (VOID**)&StrTab))) {					// Allocate space for reading the string table
+		return FALSE;
+	} else if (EFI_ERROR(ReadFile(Kernel, StrTabOff, StrTabSz, StrTab))) {								// Read the string table
+		BS->FreePool(StrTab);
+		return FALSE;
+	} else if (EFI_ERROR(BS->AllocatePool(EfiBootServicesData, SymTabSz, (VOID**)&SymTab))) {			// Allocate space for reading the symbol table
+		BS->FreePool(StrTab);
+		return FALSE;
+	} else if (EFI_ERROR(ReadFile(Kernel, SymTabOff, SymTabSz, SymTab))) {								// Read the symbol table
+		BS->FreePool(SymTab);
+		BS->FreePool(StrTab);
+		return FALSE;
+	}
+	
+	*Size = 0;
+	
+	for (UINTN i = 0; i < SymTabSz; i += SymTabEntSz) {													// First, let's see how many bytes we need
+		ELF_SYMBOL *sym = (ELF_SYMBOL*)((UINTN)SymTab + i);												// Get the symbol in the symbol table
+		
+		if (((sym->info >> 4) & 0x01) != 0x01) {														// Check if this is a local symbol (we don't need to add them)
+			continue;
+		}
+		
+		*Size += ((GetCStringLength(StrTab + sym->name) + 1) * sizeof(CHAR16)) + sizeof(UINTN);			// Add to the size
+	}
+	
+	if (EFI_ERROR(AllocatePages(*Size, Start))) {														// Allocate space for the symbol table
+		BS->FreePool(SymTab);
+		BS->FreePool(StrTab);
+		return FALSE;
+	}
+	
+	*Size = 0;																							// Now, let's add everything!
+	
+	for (UINTN i = 0; i < SymTabSz; i += SymTabEntSz) {
+		ELF_SYMBOL *sym = (ELF_SYMBOL*)((UINTN)SymTab + i);												// Get the symbol in the symbol table
+		
+		if (((sym->info >> 4) & 0x01) != 0x01) {														// Check if this is a local symbol (we don't need to add them)
+			continue;
+		}
+		
+		CHAR16 *osym = (CHAR16*)(Start + *Size);														// Get a pointer to the start of our symbol
+		CHAR8 *name = StrTab + sym->name;																// Get the symbol name
+		
+		while (*name) {																					// Copy the name
+			*osym++ = (CHAR16)*name++;
+		}
+		
+		*osym++ = 0;																					// Zero-end it
+		*((UINTN*)osym) = sym->value;																	// And save the value
+		*Size += ((GetCStringLength(StrTab + sym->name) + 1) * sizeof(CHAR16)) + sizeof(UINTN);
+	}
+	
+	BS->FreePool(SymTab);																				// Free the symtab and the strtab, we don't need them anymore!
+	BS->FreePool(StrTab);
+	
+	return TRUE;
 }

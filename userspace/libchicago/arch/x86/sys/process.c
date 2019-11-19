@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 29 of 2018, at 19:11 BRT
-// Last edited on October 29 of 2019, at 19:45 BRT
+// Last edited on November 11 of 2019, at 15:39 BRT
 
 #include <chicago/process.h>
 
@@ -58,9 +58,4 @@ Void PsExitThread(UIntPtr ret) {
 Void PsExitProcess(UIntPtr ret) {
 	Int discard;
 	Asm Volatile("int $0x3F" : "=a"(discard) : "0"(0x13), "b"(ret));
-}
-
-Void PsForceSwitch(Void) {
-	Int discard;
-	Asm Volatile("int $0x3F" : "=a"(discard) : "0"(0x14));
 }

@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on July 15 of 2018, at 19:05 BRT
-// Last edited on October 31 of 2019, at 18:01 BRT
+// Last edited on November 17 of 2019, at 09:56 BRT
 
 #include <chicago/alloc.h>
 
@@ -20,12 +20,80 @@ PVoid StrCopyMemory(PVoid restrict dest, PVoid restrict src, UIntPtr count) {
 	return dest;
 }
 
+PVoid StrCopyMemory24(PVoid restrict dest, PVoid restrict src, UIntPtr count) {
+	if ((dest == Null) || (src == Null) || (count == 0) || (src == dest)) {			// Destination is an Null pointer? Source is an Null pointer? Zero-sized copy? Destination is Source?
+		return dest;																// Yes
+	}
+	
+	PUInt8 src8 = src;
+	PUInt8 dst8 = dest;
+	PUInt16 src16 = (PUInt16)(src8 + 1);
+	PUInt16 dst16 = (PUInt16)(dst8 + 1);
+	
+	while (count--) {																// GCC should optimize this for us :)
+		*dst8 = *src8;
+		*dst16++ = *src16++;
+		dst8 += 3;
+		src8 += 3;
+	}
+	
+	return dest;
+}
+
+PVoid StrCopyMemory32(PVoid restrict dest, PVoid restrict src, UIntPtr count) {
+	if ((dest == Null) || (src == Null) || (count == 0) || (src == dest)) {			// Destination is an Null pointer? Source is an Null pointer? Zero-sized copy? Destination is Source?
+		return dest;																// Yes
+	}
+	
+	PUInt32 sr = src;
+	PUInt32 dst = dest;
+	
+	while (count--) {																// GCC should optimize this for us :)
+		*dst++ = *sr++;
+	}
+	
+	return dest;
+}
+
 PVoid StrSetMemory(PVoid dest, UInt8 val, UIntPtr count) {
 	if ((dest == Null) || (count == 0)) {											// Destination is an Null pointer? Zero-sized set?
 		return dest;																// Yes
 	}
 	
 	PUInt8 dst = dest;
+	
+	while (count--) {																// GCC should optimize this for us :)
+		*dst++ = val;
+	}
+	
+	return dest;
+}
+
+PVoid StrSetMemory24(PVoid dest, UInt32 val, UIntPtr count) {
+	if ((dest == Null) || (count == 0)) {											// Destination is an Null pointer? Zero-sized set?
+		return dest;																// Yes
+	}
+	
+	PUInt8 dst8 = dest;
+	PUInt16 dst16 = (PUInt16)(dst8 + 1);
+	UInt16 val16 = (UInt16)val;
+	UInt8 val8 = (UInt8)(val << 16);
+	
+	while (count--) {																// GCC should optimize this for us :)
+		*dst8 = val8;
+		*dst16++ = val16;
+		dst8 += 3;
+	}
+	
+	return dest;
+}
+
+PVoid StrSetMemory32(PVoid dest, UInt32 val, UIntPtr count) {
+	if ((dest == Null) || (count == 0)) {											// Destination is an Null pointer? Zero-sized set?
+		return dest;																// Yes
+	}
+	
+	PUInt32 dst = dest;
 	
 	while (count--) {																// GCC should optimize this for us :)
 		*dst++ = val;
@@ -199,9 +267,9 @@ PWChar StrTokenize(PWChar str, PWChar delim) {
 		}
 	} else if (temp == Null) {														// Not the first call but temp is Null?
 		return Null;																// Yes, so return Null
-	} else {
-		str = temp;
 	}
+	
+	str = temp;																		// Set the string
 	
 	UIntPtr chars = 0;
 	UIntPtr flag = 0;

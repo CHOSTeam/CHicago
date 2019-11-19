@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 25 of 2018, at 20:11 BRT
-// Last edited on October 25 of 2019, at 09:50 BRT
+// Last edited on November 15 of 2019, at 21:31 BRT
 
 #ifndef __CHICAGO_ELF_H__
 #define __CHICAGO_ELF_H__
@@ -31,6 +31,19 @@ typedef struct {
 } ELF_HEADER;
 
 typedef struct {
+	UINT32 name;
+	UINT32 type;
+	UINT64 flags;
+	UINT64 addr;
+	UINT64 offset;
+	UINT64 size;
+	UINT32 link;
+	UINT32 info;
+	UINT64 align;
+	UINT64 ent_size;
+} ELF_SHDR;
+
+typedef struct {
 	UINT32 type;
 	UINT32 flags;
 	UINT64 offset;
@@ -40,6 +53,15 @@ typedef struct {
 	UINT64 msize;
 	UINT64 align;
 } ELF_PHDR;
+
+typedef struct {
+	UINT32 name;
+	UINT8 info;
+	UINT8 other;
+	UINT16 shndx;
+	UINT64 value;
+	UINT64 size;
+} ELF_SYMBOL;
 #else
 #define ELF_MACHINE 0x03
 #define ELF_BASE 0xC0000000
@@ -62,6 +84,19 @@ typedef struct {
 } ELF_HEADER;
 
 typedef struct {
+	UINT32 name;
+	UINT32 type;
+	UINT32 flags;
+	UINT32 addr;
+	UINT32 offset;
+	UINT32 size;
+	UINT32 link;
+	UINT32 info;
+	UINT32 align;
+	UINT32 ent_size;
+} ELF_SHDR;
+
+typedef struct {
 	UINT32 type;
 	UINT32 offset;
 	UINT32 vaddr;
@@ -71,6 +106,15 @@ typedef struct {
 	UINT32 flags;
 	UINT32 align;
 } ELF_PHDR;
+
+typedef struct {
+	UINT32 name;
+	UINT32 value;
+	UINT32 size;
+	UINT8 info;
+	UINT8 other;
+	UINT16 shndx;
+} ELF_SYMBOL;
 #endif
 
 #endif		// __CHICAGO_ELF_H__
