@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on September 01 of 2018, at 12:02 BRT
-# Last edited on October 31 of 2019, at 18:00 BRT
+# Last edited on November 15 of 2019, at 00:08 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -45,8 +45,9 @@ endif
 ifneq ($(NOBOOT),true)
 	$(NOECHO)SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C arch/$(ARCH) all
 endif
-	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C kernel all
-	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYSROOT_DIR=$(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot make -C userspace all
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYSROOT_DIR=$(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot make -C kernel all install
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYSROOT_DIR=$(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot make -C drivers all install
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYSROOT_DIR=$(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot make -C userspace all install
 ifneq ($(NOBOOT),true)
 	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYS_LANG=$(SYS_LANG) make finish
 endif
@@ -59,9 +60,10 @@ ifeq ($(UNSUPPORTED_LANG),true)
 	$(error Unsupported language $(SYS_LANG))
 endif
 ifneq ($(NOBOOT),true)
-	$(NOECHO)SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C arch/$(ARCH) clean
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C arch/$(ARCH) clean
 endif
-	$(NOECHO)SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C kernel clean
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C kernel clean
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C drivers clean
 	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C userspace clean
 
 clean-all:
@@ -72,9 +74,10 @@ ifeq ($(UNSUPPORTED_LANG),true)
 	$(error Unsupported language $(SYS_LANG))
 endif
 ifneq ($(NOBOOT),true)
-	$(NOECHO)SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C arch/$(ARCH) clean-all
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C arch/$(ARCH) clean-all
 endif
-	$(NOECHO)SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C kernel clean-all
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C kernel clean-all
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C drivers clean-all
 	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C userspace clean-all
 	$(NOECHO)rm -rf build
 
@@ -86,19 +89,20 @@ ifeq ($(UNSUPPORTED_LANG),true)
 	$(error Unsupported language $(SYS_LANG))
 endif
 ifneq ($(NOBOOT),true)
-	$(NOECHO)SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C arch/$(ARCH) remake
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C arch/$(ARCH) remake
 endif
-	$(NOECHO)SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) make -C kernel remake
-	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYSROOT_DIR=$(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot make -C userspace remake
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYSROOT_DIR=$(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot make -C kernel remake install
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYSROOT_DIR=$(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot make -C drivers remake install
+	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYSROOT_DIR=$(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot make -C userspace remake install
 ifneq ($(NOBOOT),true)
 	$(NOECHO)ARCH=$(ARCH) SUBARCH=$(SUBARCH) TARGET=$(TARGET) VERBOSE=$(VERBOSE) DEBUG=$(DEBUG) SYS_LANG=$(SYS_LANG) make finish
 endif
 
 remake_sysroot:
 	$(NOECHO)rm -rf $(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot
-	$(NOECHO)mkdir -p $(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot/{Boot,Development,System}
+	$(NOECHO)mkdir -p $(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot/{Development,System,Libraries,Programs}
 	$(NOECHO)mkdir -p $(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot/Development/{Headers,Libraries,Programs,Sources}
-	$(NOECHO)mkdir -p $(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot/System/{Configurations,Libraries,Programs}
+	$(NOECHO)mkdir -p $(ROOT_DIR)/toolchain/$(ARCH)-$(SUBARCH)/sysroot/System/{Boot,Configurations,Drivers,Fonts,Libraries,Programs,Themes}
 
 ifneq ($(NOBOOT),true)
 include arch/$(ARCH)/arch.mk

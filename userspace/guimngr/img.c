@@ -1,10 +1,11 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on April 18 of 2019, at 12:04 BRT
-// Last edited on November 10 of 2019, at 15:18 BRT
+// Last edited on December 24 of 2019, at 13:55 BRT
 
 #include <chicago/alloc.h>
 #include <chicago/file.h>
+#include <chicago/misc.h>
 #include <chicago/string.h>
 
 #include <img.h>
@@ -88,18 +89,18 @@ PImage ImgLoadBMP(PWChar path) {
 	PUInt8 buf = (PUInt8)MmAllocMemory(len);																					// And alloc memory for reading it
 	
 	if (buf == Null) {
-		FsCloseFile(file);																										// Failed, close everything
+		SysCloseHandle(file);																									// Failed, close everything
 		return Null;
 	} else if (!FsReadFile(file, len, buf)) {																					// Read the file into memory
 		MmFreeMemory((UIntPtr)buf);																								// Failed, free and close everything
-		FsCloseFile(file);
+		SysCloseHandle(file);
 		return Null;
 	}
 	
 	PImage ret = ImgLoadBMPBuf(buf);																							// Load the image into memory
 	
 	MmFreeMemory((UIntPtr)buf);																									// Free the buffer
-	FsCloseFile(file);																											// Close the file
+	SysCloseHandle(file);																										// Close the file
 	
 	return ret;																													// And return!
 }

@@ -1,30 +1,26 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 29 of 2018, at 19:12 BRT
-// Last edited on November 11 of 2019, at 15:43 BRT
+// Last edited on December 24 of 2019, at 13:47 BRT
 
 #ifndef __CHICAGO_PROCESS_H__
 #define __CHICAGO_PROCESS_H__
 
 #include <chicago/types.h>
 
-typedef struct {
-	UIntPtr todo[2];
-} Lock, *PLock;
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-UIntPtr PsCreateThread(UIntPtr entry);
-UIntPtr PsGetTID(Void);
-UIntPtr PsGetPID(Void);
+IntPtr PsCreateThread(UIntPtr entry);
+IntPtr PsGetCurrentThread(Void);
+IntPtr PsGetCurrentProcess(Void);
 Void PsSleep(UIntPtr ms);
-UIntPtr PsWaitThread(UIntPtr id);
-UIntPtr PsWaitProcess(UIntPtr id);
-Void PsLock(PLock lock);
-Void PsUnlock(PLock lock);
+UIntPtr PsWait(IntPtr handle);
+IntPtr PsCreateLock(Void);
+Void PsLock(IntPtr lock);
+Void PsUnlock(IntPtr lock);
 Void PsExitThread(UIntPtr ret);
 Void PsExitProcess(UIntPtr ret);
 

@@ -1,17 +1,18 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on November 10 of 2019, at 21:41 BRT
-// Last edited on November 13 of 2019, at 18:17 BRT
+// Last edited on December 24 of 2019, at 13:54 BRT
 
 #include <chicago/alloc.h>
 #include <chicago/list.h>
+#include <chicago/misc.h>
 #include <chicago/process.h>
 
 #include <display.h>
 #include <renderer.h>
 
 static PImage RendererTheme = Null;
-static Lock GuiRefreshLock = { { 0, 0 } };
+static IntPtr GuiRefreshLock = -1;
 static Volatile Boolean GuiShouldRefresh = True;
 static List GuiWindowList = { Null, Null, 0, False };
 
@@ -43,7 +44,7 @@ static Void RendererMainThread(Void) {
 	while (True) {																																	// Enter the render loop!
 		while (!GuiShouldRefresh) ;																													// Wait until we need to do something
 		
-		PsLock(&GuiRefreshLock);																													// Lock
+		PsLock(GuiRefreshLock);																														// Lock
 		ImgFillRectangle(DispBackBuffer, 0, 0, DispBackBuffer->width, DispBackBuffer->height, 0xFF000000);											// Clean the screen
 		
 		ListForeach(&GuiWindowList, i) {																											// Let's iterate the window list!
@@ -77,7 +78,7 @@ static Void RendererMainThread(Void) {
 		GuiShouldRefresh = False;																													// Ok, now unset the refresh flag
 		
 		DispRefresh();																																// Copy everything into the framebuffer
-		PsUnlock(&GuiRefreshLock);																													// And unlock
+		PsUnlock(GuiRefreshLock);																													// And unlock
 	}
 }
 
@@ -146,13 +147,18 @@ Void GuiRemoveWindow(PGuiWindow window) {
 }
 
 Void GuiRefresh(Void) {
-	PsLock(&GuiRefreshLock);																														// Lock
+	PsLock(GuiRefreshLock);																															// Lock
 	GuiShouldRefresh = True;																														// Set that we should refresh
-	PsUnlock(&GuiRefreshLock);																														// Unlock
+	PsUnlock(GuiRefreshLock);																														// Unlock
 }
 
 Boolean RendererInit(Void) {
-	if (!RendererLoadTheme(L"/System/Themes/Blue.theme")) {																							// Load the default (Blue) theme
+	GuiRefreshLock = PsCreateLock();																												// Create the refresh lock
+	
+	if (GuiRefreshLock == -1) {
+		return False;
+	} else if (!RendererLoadTheme(L"/System/Themes/Blue.theme")) {																					// Load the default theme
+		SysCloseHandle(GuiRefreshLock);
 		return False;
 	}
 	

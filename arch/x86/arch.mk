@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on December 20 of 2018, at 10:49 BRT
-# Last edited on November 17 of 2019, at 10:15 BRT
+# Last edited on December 04 of 2019, at 17:48 BRT
 
 arch-clean:
 	$(NOECHO)rm -f build/chicago-$(ARCH)_$(SUBARCH).iso
@@ -13,7 +13,6 @@ finish: kernel/build/chkrnl-$(ARCH)_$(SUBARCH)
 	$(NOECHO)cp -RT toolchain/$(ARCH)-$(SUBARCH)/sysroot build/iso
 	$(NOECHO)echo -e '\xFF\xFE' > build/iso/System/Boot/bootmgr.conf
 	$(NOECHO)echo 'Language=$(LANGUAGE)' >> build/iso/System/Configurations/System.conf
-	$(NOECHO)echo '"Test Driver"=test.chd' >> build/iso/System/Configurations/Drivers.conf
 	$(NOECHO)cp kernel/build/chkrnl-$(ARCH)_$(SUBARCH) build/iso/System/Boot/chkrnl.elf
 	$(NOECHO)dd if=/dev/zero of=build/iso/System/Boot/bootmgr.img bs=1k count=2880 2>/dev/null
 	$(NOECHO)mformat -i build/iso/System/Boot/bootmgr.img -f 2880 ::
