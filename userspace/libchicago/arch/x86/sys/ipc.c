@@ -1,12 +1,12 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on December 24 of 2019, at 16:33 BRT
-// Last edited on December 24 of 2019, at 16:39 BRT
+// Last edited on December 25 of 2019, at 18:41 BRT
 
 #include <chicago/ipc.h>
 
-IntPtr IpcCreatePort(PWChar name) {
-	IntPtr ret;
+Boolean IpcCreatePort(PWChar name) {
+	Boolean ret;
 	Asm Volatile("int $0x3F" : "=a"(ret) : "0"(0x24), "b"((UIntPtr)name));
 	return ret;
 }
@@ -22,9 +22,10 @@ Void IpcRemovePort(PWChar name) {
 	Asm Volatile("int $0x3F" : "=a"(discard) : "0"(0x26), "b"((UIntPtr)name));
 }
 
-Void IpcSendMessage(PWChar name, UInt32 msg, UIntPtr size, PUInt8 buf, IntPtr rport) {
-	IntPtr discard;
-	Asm Volatile("int $0x3F" : "=a"(discard) : "0"(0x27), "b"((UIntPtr)name), "c"(msg), "d"(size), "S"((UIntPtr)buf), "D"(rport));
+PIpcMessage IpcSendMessage(PWChar name, UInt32 msg, UIntPtr size, PUInt8 buf, IntPtr rport) {
+	UIntPtr ret;
+	Asm Volatile("int $0x3F" : "=a"(ret) : "0"(0x27), "b"((UIntPtr)name), "c"(msg), "d"(size), "S"((UIntPtr)buf), "D"(rport));
+	return (PIpcMessage)ret;
 }
 
 Void IpcSendResponse(IntPtr handle, UInt32 msg, UIntPtr size, PUInt8 buf) {
