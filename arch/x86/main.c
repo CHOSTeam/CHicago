@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 24 of 2018, at 20:15 BRT
-// Last edited on November 15 of 2019, at 23:17 BRT
+// Last edited on December 25 of 2019, at 10:51 BRT
 
 #include "elf.h"
 #include "lib.h"
@@ -351,6 +351,10 @@ UINTN GetCStringLength(CHAR8 *String) {
 	return Count;
 }
 
+static BOOLEAN Is24BPP(EFI_PIXEL_BITMASK Info) {
+	return Info.RedMask == 0xFF0000 && Info.GreenMask == 0xFF00 && Info.BlueMask == 0xFF;				// Check if the bitmask is the 24bpp RGB one...
+}
+
 BOOLEAN SetVideoMode(VOID) {
 	UINTN *Data = (UINTN*)0x2000;
 	EFI_HANDLE *HBuf;
@@ -371,13 +375,15 @@ BOOLEAN SetVideoMode(VOID) {
 	}
 	
 	for (MNum = 0; !EFI_ERROR(Gop->QueryMode(Gop, MNum, &MSize, &Mode)); MNum++) {						// Now let's try to find something with at least the minimum resolution!
-		if ((Mode->PixelFormat == PixelBlueGreenRedReserved8BitPerColor) &&
+		if (((Mode->PixelFormat == PixelBitMask && Is24BPP(Mode->PixelInformation)) ||
+			(Mode->PixelFormat == PixelBlueGreenRedReserved8BitPerColor)) &&
 			(Mode->HorizontalResolution >= 1280) && (Mode->VerticalResolution >= 720)) {				// Found?
 			break;																						// Yes!
 		}
 	}
 	
-	if ((Mode->PixelFormat != PixelBlueGreenRedReserved8BitPerColor) ||
+	if (!((Mode->PixelFormat == PixelBitMask && Is24BPP(Mode->PixelInformation)) ||
+		(Mode->PixelFormat == PixelBlueGreenRedReserved8BitPerColor)) ||
 		(Mode->HorizontalResolution < 1280) || Mode->VerticalResolution < 720) {						// Found?
 		return FALSE;																					// No...
 	} else if (EFI_ERROR(Gop->SetMode(Gop, MNum))) {													// Set!
@@ -386,7 +392,7 @@ BOOLEAN SetVideoMode(VOID) {
 	
 	Data[0] = Mode->HorizontalResolution;																// Save the info
 	Data[1] = Mode->VerticalResolution;
-	Data[2] = 32;
+	Data[2] = Mode->PixelFormat == PixelBlueGreenRedReserved8BitPerColor ? 32 : 24;
 	Data[3] = (UINTN)Gop->Mode->FrameBufferBase;
 	
 	return TRUE;
