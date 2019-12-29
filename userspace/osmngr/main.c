@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 31 of 2019, at 18:03 BRT
-// Last edited on December 25 of 2019, at 19:28 BRT
+// Last edited on December 25 of 2019, at 22:12 BRT
 
 #include <chicago/exec.h>
 #include <chicago/process.h>
@@ -21,6 +21,8 @@ Void AppEntry(Void) {
 	if (PsCreateThread((UIntPtr)RunGuimngr) == -1) {									// Run the graphical manager
 		PsExitProcess((UIntPtr)-1);
 	}
+	
+	ExecCreateProcess(L"/System/Programs/guitest.che");									// Run the test program
 	
 	while (True) ;
 }

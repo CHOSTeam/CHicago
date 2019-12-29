@@ -1,14 +1,15 @@
 # File author is Ítalo Lima Marconato Matias
 #
-# Created on October 31 of 2019, at 17:51 BRT
-# Last edited on December 26 of 2019, at 10:51 BRT
+# Created on December 25 of 2019, at 22:39 BRT
+# Last edited on December 26 of 2019, at 10:52 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
 DEBUG ?= false
 
 SYSROOT_DIR ?=
-PROG_DIR ?= System/Programs
+LIB_DIR ?= System/Libraries
+INC_DIR ?= Development/Headers
 
 ifeq ($(ARCH),x86)
 	SUBARCH ?= 32
@@ -20,7 +21,7 @@ ifeq ($(ARCH),x86)
 	else ifeq ($(SUBARCH),64)
 		FULL_ARCH := $(ARCH)-$(SUBARCH)
 		TARGET ?= x86_64-chicago
-		ARCH_CFLAGS += -DARCH_64
+		ARCH_CFLAGS += -DARCH_64 -fPIC
 	else
 		UNSUPPORTED_ARCH := true
 	endif
@@ -28,11 +29,11 @@ else
 	UNSUPPORTED_ARCH := true
 endif
 
-OBJECTS := main.c.o
+OBJECTS := img.c.o server.c.o
 
 ARCH_OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/$(ARCH)/,$(ARCH_OBJECTS))
 OBJECTS := $(addprefix build/$(FULL_ARCH)/,$(OBJECTS))
-OUTPUT := build/osmngr-$(FULL_ARCH).che
+OUTPUT := build/libgui-$(FULL_ARCH).so
 
 ifneq ($(VERBOSE),true)
 NOECHO := @
@@ -64,8 +65,10 @@ install: all
 ifeq ($(UNSUPPORTED_ARCH),true)
 	$(error Unsupported architecture $(ARCH), subarch $(SUBARCH))
 endif
-	$(NOECHO)echo Installing osmngr.che
-	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(PROG_DIR)/osmngr.che
+	$(NOECHO)echo Installing headers
+	$(NOECHO)cp -RT include $(SYSROOT_DIR)/$(INC_DIR)
+	$(NOECHO)echo Installing libgui.so
+	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(LIB_DIR)/libgui.so
 
 $(OUTPUT): $(ARCH_OBJECTS) $(OBJECTS)
 ifeq ($(UNSUPPORTED_ARCH),true)
@@ -74,7 +77,7 @@ endif
 	$(NOECHO)echo Linking $@
 	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 	$(NOECHO)
-	$(NOECHO)$(TARGET)-gcc -nostdlib -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS) -lchicago
+	$(NOECHO)$(TARGET)-gcc -shared -nostdlib -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS) -lchicago
 
 build/$(FULL_ARCH)/%.s.o: %.s
 ifeq ($(UNSUPPORTED_ARCH),true)
@@ -91,7 +94,7 @@ endif
 	$(NOECHO)echo Compiling $<
 	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 ifeq ($(DEBUG),yes)
-	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -DDEBUG -g -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-builtin -fshort-wchar -funroll-loops -fomit-frame-pointer -ffast-math -O0 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
+	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -DDEBUG -g -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-builtin -fshort-wchar -fomit-frame-pointer -ffast-math -O0 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
 else
 	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-builtin -fshort-wchar -funroll-loops -fomit-frame-pointer -ffast-math -O3 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
 endif

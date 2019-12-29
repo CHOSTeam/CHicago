@@ -1,12 +1,17 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on July 15 of 2018, at 20:03 BRT
-// Last edited on November 10 of 2019, at 14:52 BRT
+// Last edited on December 25 of 2019, at 20:34 BRT
 
 #ifndef __CHICAGO_STRING_H__
 #define __CHICAGO_STRING_H__
 
 #include <chicago/types.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 PVoid StrCopyMemory(PVoid restrict dest, PVoid restrict src, UIntPtr count);
 PVoid StrCopyMemory24(PVoid restrict dest, PVoid restrict src, UIntPtr count);
@@ -22,5 +27,9 @@ Void StrConcatenate(PWChar dest, PWChar src);
 PWChar StrTokenize(PWChar str, PWChar delim);
 PWChar StrDuplicate(PWChar str);
 UIntPtr StrFormat(PWChar str, PWChar data, ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif		// __CHICAGO_STRING_H__

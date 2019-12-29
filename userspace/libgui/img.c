@@ -1,14 +1,13 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on April 18 of 2019, at 12:04 BRT
-// Last edited on December 26 of 2019, at 12:06 BRT
+// Last edited on December 25 of 2019, at 23:30 BRT
 
 #include <chicago/alloc.h>
 #include <chicago/file.h>
 #include <chicago/misc.h>
 #include <chicago/string.h>
-
-#include <img.h>
+#include <chicago/gui/img.h>
 
 PImage ImgCreate(UIntPtr width, UIntPtr height, UInt8 bpp) {
 	if ((width == 0) || (height == 0) || ((bpp != 3) && (bpp != 4))) {															// Sanity checks
@@ -28,7 +27,7 @@ PImage ImgCreate(UIntPtr width, UIntPtr height, UInt8 bpp) {
 }
 
 PImage ImgCreateBuf(UIntPtr width, UIntPtr height, UInt8 bpp, UIntPtr buf) {
-	if ((width == 0) || (height == 0) || (buf == 0) || ((bpp != 3) && (bpp != 4))) {											// Sanity checks
+	if ((width == 0) || (height == 0) || ((bpp != 3) && (bpp != 4))) {															// Sanity checks
 		return Null;
 	}
 	

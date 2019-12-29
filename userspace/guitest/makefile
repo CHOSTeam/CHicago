@@ -1,6 +1,6 @@
 # File author is Ítalo Lima Marconato Matias
 #
-# Created on October 31 of 2019, at 17:51 BRT
+# Created on December 25 of 2019, at 22:05 BRT
 # Last edited on December 26 of 2019, at 10:51 BRT
 
 ARCH ?= x86
@@ -32,7 +32,7 @@ OBJECTS := main.c.o
 
 ARCH_OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/$(ARCH)/,$(ARCH_OBJECTS))
 OBJECTS := $(addprefix build/$(FULL_ARCH)/,$(OBJECTS))
-OUTPUT := build/osmngr-$(FULL_ARCH).che
+OUTPUT := build/guitest-$(FULL_ARCH).che
 
 ifneq ($(VERBOSE),true)
 NOECHO := @
@@ -64,8 +64,8 @@ install: all
 ifeq ($(UNSUPPORTED_ARCH),true)
 	$(error Unsupported architecture $(ARCH), subarch $(SUBARCH))
 endif
-	$(NOECHO)echo Installing osmngr.che
-	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(PROG_DIR)/osmngr.che
+	$(NOECHO)echo Installing guitest.che
+	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(PROG_DIR)/guitest.che
 
 $(OUTPUT): $(ARCH_OBJECTS) $(OBJECTS)
 ifeq ($(UNSUPPORTED_ARCH),true)
@@ -74,7 +74,7 @@ endif
 	$(NOECHO)echo Linking $@
 	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 	$(NOECHO)
-	$(NOECHO)$(TARGET)-gcc -nostdlib -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS) -lchicago
+	$(NOECHO)$(TARGET)-gcc -nostdlib -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS) -lgui
 
 build/$(FULL_ARCH)/%.s.o: %.s
 ifeq ($(UNSUPPORTED_ARCH),true)

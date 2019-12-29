@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on October 29 of 2019, at 18:21 BRT
-# Last edited on November 25 of 2019, at 17:41 BRT
+# Last edited on December 26 of 2019, at 10:51 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -21,7 +21,7 @@ ifeq ($(ARCH),x86)
 	else ifeq ($(SUBARCH),64)
 		FULL_ARCH := $(ARCH)-$(SUBARCH)
 		TARGET ?= x86_64-chicago
-		ARCH_CFLAGS += -DARCH_64
+		ARCH_CFLAGS += -DARCH_64 -fPIC
 	else
 		UNSUPPORTED_ARCH := true
 	endif
@@ -35,7 +35,7 @@ else
 endif
 
 OBJECTS := ds/list.c.o
-OBJECTS += sys/string.c.o
+OBJECTS += sys/rand.c.o sys/string.c.o
 
 ARCH_OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/$(ARCH)/,$(ARCH_OBJECTS))
 OBJECTS := $(addprefix build/$(FULL_ARCH)/,$(OBJECTS))
@@ -100,7 +100,7 @@ endif
 	$(NOECHO)echo Compiling $<
 	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 ifeq ($(DEBUG),yes)
-	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -DDEBUG -g -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-builtin -fshort-wchar -O0 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
+	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -DDEBUG -g -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-builtin -fshort-wchar -funroll-loops -fomit-frame-pointer -ffast-math -O0 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
 else
 	$(NOECHO)$(TARGET)-gcc -DARCH=L\"$(ARCH)\" -std=c11 -Iinclude -Iarch/$(ARCH)/include -fno-builtin -fshort-wchar -funroll-loops -fomit-frame-pointer -ffast-math -O3 -Wall -Wextra -Wno-implicit-fallthrough -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast $(ARCH_CFLAGS) -c $< -o $@
 endif

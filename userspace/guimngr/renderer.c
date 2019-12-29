@@ -1,12 +1,13 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on November 10 of 2019, at 21:41 BRT
-// Last edited on December 24 of 2019, at 13:54 BRT
+// Last edited on December 29 of 2019, at 14:23 BRT
 
 #include <chicago/alloc.h>
 #include <chicago/list.h>
 #include <chicago/misc.h>
 #include <chicago/process.h>
+#include <chicago/rand.h>
 
 #include <display.h>
 #include <renderer.h>
@@ -100,7 +101,7 @@ Boolean RendererLoadTheme(PWChar path) {
 	return True;
 }
 
-static Boolean GuiGetWindow(PGuiWindow window, PUIntPtr out) {
+static Boolean GuiGetWindow2(PGuiWindow window, PUIntPtr out) {
 	if (window == Null) {																															// Sanity check
 		return False;
 	}
@@ -122,14 +123,34 @@ static Boolean GuiGetWindow(PGuiWindow window, PUIntPtr out) {
 	return False;
 }
 
+PGuiWindow GuiGetWindow(UIntPtr key) {
+	ListForeach(&GuiWindowList, i) {																												// Let's iterate the window list
+		if (((PGuiWindow)i->data)->key == key) {
+			return (PGuiWindow)i->data;																												// We found it!
+		}
+	}
+	
+	return Null;
+}
+
 Void GuiAddWindow(PGuiWindow window) {
 	if (window == Null) {																															// Sanity check
 		return;
-	} else if (GuiGetWindow(window, Null) || !ListAdd(&GuiWindowList, window)) {																	// Check if it's not already added, and add it!
+	} else if (GuiGetWindow2(window, Null)) {																										// Check if it's not already added
 		return;
-	} else {
-		GuiRefresh();																																// REFRESH!
 	}
+	
+	window->key = RandGenerate();																													// Set the key
+	
+	while (GuiGetWindow(window->key) != Null) {																										// And make sure that it is unique
+		window->key = RandGenerate();
+	}
+	
+	if (!ListAdd(&GuiWindowList, window)) {																											// Add it
+		return;
+	}
+	
+	GuiRefresh();																																	// REFRESH!
 }
 
 Void GuiRemoveWindow(PGuiWindow window) {
@@ -139,7 +160,7 @@ Void GuiRemoveWindow(PGuiWindow window) {
 	
 	UIntPtr idx = 0;
 	
-	if (!GuiGetWindow(window, &idx)) {																												// Get the index of the window in the window list
+	if (!GuiGetWindow2(window, &idx)) {																												// Get the index of the window in the window list
 		return;
 	} else if (ListRemove(&GuiWindowList, idx) != Null) {																							// Remove it
 		GuiRefresh();																																// And refresh!
@@ -162,5 +183,5 @@ Boolean RendererInit(Void) {
 		return False;
 	}
 	
-	return PsCreateThread((UIntPtr)RendererMainThread) != 0;																						// And create the renderer thread!
+	return PsCreateThread((UIntPtr)RendererMainThread) != -1;																						// And create the renderer thread!
 }
