@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on December 25 of 2019, at 23:45 BRT
-// Last edited on December 26 of 2019, at 12:24 BRT
+// Last edited on December 29 of 2019, at 18:22 BRT
 
 #include <chicago/alloc.h>
 #include <chicago/ipc.h>
@@ -34,8 +34,9 @@ PGuiWindow GuiCreateWindow(UIntPtr x, UIntPtr y, UIntPtr w, UIntPtr h) {
 	UIntPtr buf = ShmMapSection(rep->shm_key);																						// Map the shared memory section
 	
 	if (buf == 0) {
+		IpcSendMessage(L"GuiServer", GUI_REMOVE_WINDOW_REQUEST, rep->window_key, Null, -1);											// Failed...
 		MmFreeMemory((UIntPtr)rep);
-		MmFreeMemory((UIntPtr)msg);																									// Failed...
+		MmFreeMemory((UIntPtr)msg);
 		MmFreeMemory((UIntPtr)window);
 		return Null;
 	}
@@ -44,18 +45,38 @@ PGuiWindow GuiCreateWindow(UIntPtr x, UIntPtr y, UIntPtr w, UIntPtr h) {
 	window->y = y;
 	window->wkey = rep->window_key;
 	window->skey = rep->shm_key;
-	window->surface = ImgCreateBuf(x, y, rep->bpp, buf);
+	window->surface = ImgCreateBuf(w, h, rep->bpp, buf);
 	
 	MmFreeMemory((UIntPtr)rep);																										// Free some stuff that we don't need anymore
 	MmFreeMemory((UIntPtr)msg);
-	MmFreeMemory((UIntPtr)window);
 	
 	if (window->surface == Null) {
-		ShmUnmapSection(window->skey);																								// Failed...
+		IpcSendMessage(L"GuiServer", GUI_REMOVE_WINDOW_REQUEST, rep->window_key, Null, -1);											// Failed...
+		ShmUnmapSection(window->skey);
+		MmFreeMemory((UIntPtr)window);
 		return Null;
 	}
 	
 	return window;
+}
+
+Void GuiRemoveWindow(PGuiWindow window) {
+	if (GuiResponsePort == -1 || window == Null) {																					// Sanity checks
+		return;
+	}
+	
+	IpcSendMessage(L"GuiServer", GUI_REMOVE_WINDOW_REQUEST, window->wkey, Null, -1);												// Send the remove window message
+	ShmUnmapSection(window->skey);																									// Unmap the shared memory section
+	MmFreeMemory((UIntPtr)window->surface);																							// Free the surface struct
+	MmFreeMemory((UIntPtr)window);																									// And the window struct
+}
+
+Void GuiRefresh(Void) {
+	if (GuiResponsePort == -1) {																									// Only go forward if we are initialized
+		return;
+	}
+	
+	IpcSendMessage(L"GuiServer", GUI_REFRESH_REQUEST, 0, Null, -1);																	// Send the message!
 }
 
 Void GuiInit(Void) {

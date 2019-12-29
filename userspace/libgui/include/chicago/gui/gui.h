@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on December 25 of 2019, at 23:23 BRT
-// Last edited on December 26 of 2019, at 00:17 BRT
+// Last edited on December 29 of 2019, at 18:09 BRT
 
 #ifndef __CHICAGO_GUI_GUI_H__
 #define __CHICAGO_GUI_GUI_H__
@@ -9,6 +9,8 @@
 #include <chicago/gui/window.h>
 
 #define GUI_CREATE_WINDOW_REQUEST 0x00
+#define GUI_REMOVE_WINDOW_REQUEST 0x01
+#define GUI_REFRESH_REQUEST 0x02
 
 typedef struct {
 	UIntPtr x;
@@ -29,6 +31,7 @@ extern "C"
 #endif
 
 Void GuiInit(Void);
+Void GuiRefresh(Void);
 
 #ifdef __cplusplus
 }

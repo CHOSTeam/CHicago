@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on December 25 of 2019, at 19:53 BRT
-// Last edited on December 26 of 2019, at 11:22 BRT
+// Last edited on December 29 of 2019, at 18:08 BRT
 
 #include <chicago/alloc.h>
 #include <chicago/ipc.h>
@@ -53,6 +53,10 @@ static Void GuiServerListener(Void) {
 			
 			IpcSendResponse(msg->rport, True, sizeof(GuiCreateWindowReply), (PUInt8)rep);											// And send it!
 			MmFreeMemory((UIntPtr)rep);
+		} else if (msg->msg == GUI_REMOVE_WINDOW_REQUEST) {																			// Remove window request?
+			GuiRemoveWindow(GuiGetWindow(msg->size));																				// Yes, try to get the window (the key stored in the ->size prop of the message) and pass it to GuiRemoveWindow (it will handle Null paramenters)
+		} else if (msg->msg == GUI_REFRESH_REQUEST) {																				// Refresh request?
+			GuiRefresh();																											// Yes, just call GuiRefresh()
 		}
 		
 e:		if (msg->buffer != Null) {																									// Free the msg buffer
