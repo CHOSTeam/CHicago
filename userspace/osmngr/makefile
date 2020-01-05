@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on October 31 of 2019, at 17:51 BRT
-# Last edited on December 26 of 2019, at 10:51 BRT
+# Last edited on January 04 of 2020, at 11:03 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -20,7 +20,6 @@ ifeq ($(ARCH),x86)
 	else ifeq ($(SUBARCH),64)
 		FULL_ARCH := $(ARCH)-$(SUBARCH)
 		TARGET ?= x86_64-chicago
-		ARCH_CFLAGS += -DARCH_64
 	else
 		UNSUPPORTED_ARCH := true
 	endif
@@ -30,7 +29,6 @@ endif
 
 OBJECTS := main.c.o
 
-ARCH_OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/$(ARCH)/,$(ARCH_OBJECTS))
 OBJECTS := $(addprefix build/$(FULL_ARCH)/,$(OBJECTS))
 OUTPUT := build/osmngr-$(FULL_ARCH).che
 
@@ -47,7 +45,7 @@ clean:
 ifeq ($(UNSUPPORTED_ARCH),true)
 	$(error Unsupported architecture $(ARCH), subarch $(SUBARCH))
 endif
-	$(NOECHO)rm -f $(ARCH_OBJECTS) $(OBJECTS) $(OUTPUT)
+	$(NOECHO)rm -f $(OBJECTS) $(OUTPUT)
 
 clean-all:
 ifeq ($(UNSUPPORTED_ARCH),true)
@@ -67,22 +65,14 @@ endif
 	$(NOECHO)echo Installing osmngr.che
 	$(NOECHO)cp $(OUTPUT) $(SYSROOT_DIR)/$(PROG_DIR)/osmngr.che
 
-$(OUTPUT): $(ARCH_OBJECTS) $(OBJECTS)
+$(OUTPUT): $(OBJECTS)
 ifeq ($(UNSUPPORTED_ARCH),true)
 	$(error Unsupported architecture $(ARCH), subarch $(SUBARCH))
 endif
 	$(NOECHO)echo Linking $@
 	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
 	$(NOECHO)
-	$(NOECHO)$(TARGET)-gcc -nostdlib -o $@ $(ARCH_OBJECTS) $(OBJECTS) $(ARCH_LDFLAGS) -lchicago
-
-build/$(FULL_ARCH)/%.s.o: %.s
-ifeq ($(UNSUPPORTED_ARCH),true)
-	$(error Unsupported architecture $(ARCH), subarch $(SUBARCH))
-endif
-	$(NOECHO)echo Compiling $<
-	$(NOECHO)if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi
-	$(NOECHO)$(TARGET)-gcc $(ARCH_AFLAGS) $< -o $@
+	$(NOECHO)$(TARGET)-gcc -o $@ $(OBJECTS) $(ARCH_LDFLAGS)
 
 build/$(FULL_ARCH)/%.c.o: %.c
 ifeq ($(UNSUPPORTED_ARCH),true)

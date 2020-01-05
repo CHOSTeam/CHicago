@@ -41,7 +41,7 @@ diff -urN a/config.sub b/config.sub
 +/* Files that are linked before user code.
 +   The %s tells GCC to look for these files in the library directory. */
 +#undef STARTFILE_SPEC
-+#define STARTFILE_SPEC "crti.o%s %{shared|!no-pie:crtbeginS.o%s;:crtbegin.o%s} %{kdriver:kdriver.o%s}"
++#define STARTFILE_SPEC "crti.o%s %{shared|!no-pie:crtbeginS.o%s;:crtbegin.o%s} %{kdriver:kdriver.o%s;:crt0.o%s}"
 +
 +/* Files that are linked after user code. */
 +#undef ENDFILE_SPEC

@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 29 of 2018, at 19:33 BRT
-// Last edited on December 24 of 2019, at 13:46 BRT
+// Last edited on January 04 of 2020, at 18:03 BRT
 
 #ifndef __CHICAGO_FILE_H__
 #define __CHICAGO_FILE_H__
@@ -14,8 +14,8 @@ extern "C"
 #endif
 
 IntPtr FsOpenFile(PWChar path);
-Boolean FsReadFile(IntPtr handle, UIntPtr len, PUInt8 buf);
-Boolean FsWriteFile(IntPtr handle, UIntPtr len, PUInt8 buf);
+UIntPtr FsReadFile(IntPtr handle, UIntPtr len, PUInt8 buf);
+UIntPtr FsWriteFile(IntPtr handle, UIntPtr len, PUInt8 buf);
 Boolean FsMountFile(PWChar path, PWChar file, PWChar type);
 Boolean FsUmountFile(PWChar path);
 Boolean FsReadDirectoryEntry(IntPtr handle, UIntPtr entry, PWChar out);

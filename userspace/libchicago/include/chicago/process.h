@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 29 of 2018, at 19:12 BRT
-// Last edited on December 24 of 2019, at 13:47 BRT
+// Last edited on January 01 of 2020, at 19:06 BRT
 
 #ifndef __CHICAGO_PROCESS_H__
 #define __CHICAGO_PROCESS_H__
@@ -20,6 +20,7 @@ Void PsSleep(UIntPtr ms);
 UIntPtr PsWait(IntPtr handle);
 IntPtr PsCreateLock(Void);
 Void PsLock(IntPtr lock);
+Boolean PsTryLock(IntPtr lock);
 Void PsUnlock(IntPtr lock);
 Void PsExitThread(UIntPtr ret);
 Void PsExitProcess(UIntPtr ret);

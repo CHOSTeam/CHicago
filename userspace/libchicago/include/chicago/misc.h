@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 29 of 2019, at 18:45 BRT
-// Last edited on December 24 of 2019, at 13:48 BRT
+// Last edited on December 30 of 2019, at 15:26 BRT
 
 #ifndef __CHICAGO_MISC_H__
 #define __CHICAGO_MISC_H__
@@ -22,6 +22,7 @@ extern "C"
 #endif
 
 Void SysGetVersion(PSystemVersion ver);
+PInt SysGetErrno(Void);
 Void SysCloseHandle(IntPtr handle);
 
 #ifdef __cplusplus

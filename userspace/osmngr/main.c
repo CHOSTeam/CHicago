@@ -1,28 +1,28 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 31 of 2019, at 18:03 BRT
-// Last edited on December 25 of 2019, at 22:12 BRT
+// Last edited on January 05 of 2020, at 13:56 BRT
 
-#include <chicago/exec.h>
-#include <chicago/process.h>
+#include <chicago/file.h>
 
-static Void RunGuimngr(Void) {
-	IntPtr handle = ExecCreateProcess(L"/System/Programs/guimngr.che");					// Try to create the process
-	
-	if (handle == -1) {
-		PsExitProcess((UIntPtr)-1);														// Failed, this is a critical process, so we should exit and make the kernel panic
-	}
-	
-	PsWait(handle);																		// It shouldn't exit..
-	PsExitProcess((UIntPtr)-1);															// Well... panic
-}
+#include <stdio.h>
 
-Void AppEntry(Void) {
-	if (PsCreateThread((UIntPtr)RunGuimngr) == -1) {									// Run the graphical manager
-		PsExitProcess((UIntPtr)-1);
-	}
+int main(void) {
+	const char str[] = "Test String";												// Define the test string
 	
-	ExecCreateProcess(L"/System/Programs/guitest.che");									// Run the test program
+	setvbuf(stdout, NULL, _IOFBF, BUFSIZ);											// Create a new buffer for stdout, and set the buffering mode to full
 	
-	while (True) ;
+	printf("Testing the buffering functions of my new libc...\n");					// Now, let's call printf some times...
+	printf("Formatting some stuff:\n");
+	printf("|1234567890123|\n");
+	printf("|%13s|\n", str);
+	printf("|%-13.9s|\n", str);
+	printf("|%13.10s|\n", str);
+	printf("|%13.11s|\n", str);
+	printf("|%13.15s|\n", &str[2]);
+	printf("|%13c|\n", str[5]);
+	
+	fflush(stdout);																	// And flush stdout!
+	
+	while (1) ;
 }

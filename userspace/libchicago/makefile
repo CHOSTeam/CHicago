@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on October 29 of 2019, at 18:21 BRT
-# Last edited on December 26 of 2019, at 10:51 BRT
+# Last edited on January 04 of 2020, at 11:04 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -21,7 +21,7 @@ ifeq ($(ARCH),x86)
 	else ifeq ($(SUBARCH),64)
 		FULL_ARCH := $(ARCH)-$(SUBARCH)
 		TARGET ?= x86_64-chicago
-		ARCH_CFLAGS += -DARCH_64 -fPIC
+		ARCH_CFLAGS += -fPIC
 	else
 		UNSUPPORTED_ARCH := true
 	endif
