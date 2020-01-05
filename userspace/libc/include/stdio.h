@@ -1,15 +1,14 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 01 of 2020, at 16:56 BRT
-// Last edited on January 05 of 2020, at 13:00 BRT
+// Last edited on January 05 of 2020, at 17:46 BRT
 
 #ifndef _STDIO_H
 #define _STDIO_H
 
-#include <chicago/types.h>
+#include <chlibc/platform.h>
 
 #include <stdarg.h>
-#include <stddef.h>
 
 #ifdef __STDIO__
 #define __FLAGS_EOF 0x08
@@ -30,10 +29,6 @@
 #define _IOLBF 0x02
 #define _IONBF 0x04
 
-#define SEEK_SET 0x00
-#define SEEK_CUR 0x01
-#define SEEK_END 0x02
-
 #define getc_unlocked(stream) fgetc_unlocked(stream)
 #define getc(stream) fgetc(stream)
 #define putc_unlocked(c, stream) fputc_unlocked(c, stream)
@@ -42,9 +37,9 @@
 typedef long int fpos_t;
 
 typedef struct {
-	IntPtr file;
-	IntPtr lock;
-	PWChar filename;
+	__platform_file_t file;
+	__platform_lock_t lock;
+	__platform_fname_t filename;
 	char *buf;
 	int buf_free;
 	size_t buf_size;

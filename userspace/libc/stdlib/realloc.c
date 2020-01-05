@@ -1,9 +1,9 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 03 of 2020, at 11:02 BRT
-// Last edited on January 03 of 2020, at 11:06 BRT
+// Last edited on January 05 of 2020, at 17:22 BRT
 
-#include <chicago/alloc.h>
+#include <chlibc/platform.h>
 
 #include <stdlib.h>
 
@@ -12,5 +12,5 @@ void *realloc(void *ptr, size_t size) {
 		return malloc(size);								// Redirect to malloc
 	}
 	
-	return (void*)MmReallocMemory((UIntPtr)ptr, size);		// Redirect to MmReallocMemory
+	return __realloc(ptr, size);							// Redirect to the internal realloc function...
 }

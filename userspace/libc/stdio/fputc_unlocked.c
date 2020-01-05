@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 01 of 2020, at 21:39 BRT
-// Last edited on January 05 of 2020, at 13:41 BRT
-
-#include <chicago/file.h>
+// Last edited on January 05 of 2020, at 17:39 BRT
 
 #define __STDIO__
 #include <stdio.h>
@@ -19,10 +17,10 @@ int fputc_unlocked(int c, FILE *stream) {
 	
 	stream->flags |= __FLAGS_WRITING;																	// Set that we are writing!
 	
-	UInt8 buf = (UInt8)c;																				// Convert the data to be written
+	char buf = (char)c;																					// Convert the data to be written
 	
 	if (stream->flags & _IONBF) {																		// Are we buffered?
-		if (!FsWriteFile(stream->file, 1, &buf)) {														// Nope, just write!
+		if (__write(stream->file, 1, &buf) != 1) {														// Nope, just write!
 			stream->flags |= __FLAGS_ERROR;																// Failed, set the error flag
 			return EOF;
 		}
@@ -37,7 +35,7 @@ int fputc_unlocked(int c, FILE *stream) {
 	
 	if (stream->buf_pos >= stream->buf_size ||
 		((stream->flags & _IOLBF) && c == '\n')) {														// Should we flush the buffer?
-		if (FsWriteFile(stream->file, stream->buf_pos, (PUInt8)stream->buf) != stream->buf_pos) {		// Yes, do it!
+		if (__write(stream->file, stream->buf_pos, stream->buf) != stream->buf_pos) {					// Yes, do it!
 			stream->flags |= __FLAGS_ERROR;																// Failed, set the error flag
 			return EOF;
 		}

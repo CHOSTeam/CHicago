@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 02 of 2020, at 12:02 BRT
-// Last edited on January 04 of 2020, at 22:14 BRT
-
-#include <chicago/file.h>
+// Last edited on January 05 of 2020, at 17:38 BRT
 
 #define __STDIO__
 #include <stdio.h>
@@ -32,7 +30,7 @@ char *fgets_unlocked(char *restrict s, int n, FILE *restrict stream) {
 			if (stream->unget != EOF) {															// Use the unget buffer?
 				*dest++ = stream->unget;														// Yeah
 				stream->unget = EOF;
-			} else if (FsReadFile(stream->file, 1, (PUInt8)dest++) != 1) {
+			} else if (__read(stream->file, 1, dest++) != 1) {
 				stream->flags |= __FLAGS_EOF;													// End of file...
 				return NULL;
 			}
@@ -57,7 +55,7 @@ char *fgets_unlocked(char *restrict s, int n, FILE *restrict stream) {
 		}
 		
 		if (stream->buf_pos >= stream->buf_size || stream->buf_read == 0) {						// We need to fill the buffer?
-			UIntPtr read = FsReadFile(stream->file, stream->buf_size, (PUInt8)stream->buf);		// Yes, read in
+			size_t read = __read(stream->file, stream->buf_size, stream->buf);					// Yes, read in
 
 			if (read == 0) {																	// Failed?
 				stream->flags |= __FLAGS_EOF;													// Yup. that's EOF...

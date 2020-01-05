@@ -1,13 +1,9 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 04 of 2020, at 22:22 BRT
-// Last edited on January 04 of 2020, at 22:30 BRT
-
-#include <chicago/list.h>
+// Last edited on January 05 of 2020, at 17:03 BRT
 
 #include <stdio.h>
-
-extern List __file_list;
 
 int fflush(FILE *stream) {
 	if (stream == NULL) {													// Should we just flush everything?
@@ -19,10 +15,14 @@ int fflush(FILE *stream) {
 			return EOF;
 		}
 		
-		ListForeach(&__file_list, i) {										// Now flush everything else (all the other open streams)
-			if (fflush(i->data) == EOF) {
+		void *last = __get_stream_list();									// Get the start of the stream list
+		
+		while (last != NULL) {												// And here we go...
+			if (fflush(__get_stream(last)) == EOF) {						// Flush
 				return EOF;
 			}
+			
+			last = __get_next_stream(last);									// Get the next stream
 		}
 		
 		return 0;

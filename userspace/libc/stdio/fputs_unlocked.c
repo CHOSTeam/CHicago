@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 02 of 2020, at 12:13 BRT
-// Last edited on January 05 of 2020, at 13:42 BRT
-
-#include <chicago/file.h>
+// Last edited on January 05 of 2020, at 17:39 BRT
 
 #define __STDIO__
 #include <stdio.h>
@@ -22,7 +20,7 @@ int fputs_unlocked(const char *restrict s, FILE *restrict stream) {
 	
 	if (stream->flags & _IONBF) {																			// Should we use buffering?
 		size_t len = strlen(s);																				// Nope, get the string length
-		UIntPtr written = FsWriteFile(stream->file, len, (PUInt8)s);										// Write it
+		size_t written = __write(stream->file, len, s);														// Write it
 		
 		if (written < len) {
 			stream->flags |= __FLAGS_ERROR;																	// ...
@@ -42,7 +40,7 @@ int fputs_unlocked(const char *restrict s, FILE *restrict stream) {
 		
 		if (stream->buf_pos >= stream->buf_size ||
 			((stream->flags & _IOLBF) && *s == '\n')) {														// Should we flush the buffer?
-			if (FsWriteFile(stream->file, stream->buf_pos, (PUInt8)stream->buf) != stream->buf_pos) {		// Yes, do it!
+			if (__write(stream->file, stream->buf_pos, (PUInt8)stream->buf) != stream->buf_pos) {			// Yes, do it!
 				stream->flags |= __FLAGS_ERROR;																// Failed, set the error flag
 				return EOF;
 			}

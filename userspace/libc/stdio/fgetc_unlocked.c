@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 01 of 2020, at 21:23 BRT
-// Last edited on January 04 of 2020, at 22:14 BRT
-
-#include <chicago/file.h>
+// Last edited on January 05 of 2020, at 17:38 BRT
 
 #define __STDIO__
 #include <stdio.h>
@@ -27,7 +25,7 @@ int fgetc_unlocked(FILE *stream) {
 	} else if (stream->flags & _IONBF) {													// No buffering?
 		char ret;																			// Yeah! Let's call FsReadFile directly and only read one byte!
 		
-		if (FsReadFile(stream->file, 1, (PUInt8)&ret) != 1) {
+		if (__read(stream->file, 1, &ret) != 1) {
 			stream->flags |= __FLAGS_EOF;													// End of file, set the EOF flag and return
 			return EOF;
 		}
@@ -36,7 +34,7 @@ int fgetc_unlocked(FILE *stream) {
 		
 		return ret;
 	} else if (stream->buf_pos >= stream->buf_size || stream->buf_read == 0) {				// We need to fill the buffer?
-		UIntPtr read = FsReadFile(stream->file, stream->buf_size, (PUInt8)stream->buf);		// Yes, read in
+		size_t read = __read(stream->file, stream->buf_size, stream->buf);					// Yes, read in
 		
 		if (read == 0) {																	// Failed?
 			stream->flags |= __FLAGS_EOF;													// Yup. that's EOF...

@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 02 of 2020, at 11:01 BRT
-// Last edited on January 04 of 2020, at 22:19 BRT
-
-#include <chicago/file.h>
+// Last edited on January 05 of 2020, at 17:38 BRT
 
 #define __STDIO__
 #include <stdio.h>
@@ -24,7 +22,7 @@ size_t fread_unlocked(void *restrict ptr, size_t size, size_t count, FILE *restr
 	
 	if (stream->flags & _IONBF) {																	// No buffering?
 		for (size_t i = 0; i < count; i++) {														// Yeah, so let's just read all the items!
-			if (FsReadFile(stream->file, size, (PUInt8)dest) != size) {
+			if (__read(stream->file, size, dest) != size) {
 				stream->flags |= __FLAGS_EOF;														// End of file...
 				return i;
 			}
@@ -46,7 +44,7 @@ size_t fread_unlocked(void *restrict ptr, size_t size, size_t count, FILE *restr
 			}
 			
 			if (stream->buf_pos >= stream->buf_size || stream->buf_read == 0) {						// We need to fill the buffer?
-				UIntPtr read = FsReadFile(stream->file, stream->buf_size, (PUInt8)stream->buf);		// Yes, read in
+				size_t read = __read(stream->file, stream->buf_size, stream->buf);					// Yes, read in
 
 				if (read == 0) {																	// Failed?
 					stream->flags |= __FLAGS_EOF;													// Yup. that's EOF...

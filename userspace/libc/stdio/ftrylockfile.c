@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 02 of 2020, at 11:21 BRT
-// Last edited on January 02 of 2020, at 11:27 BRT
-
-#include <chicago/process.h>
+// Last edited on January 05 of 2020, at 17:43 BRT
 
 #include <stdio.h>
 
@@ -12,5 +10,5 @@ int ftrylockfile(FILE *stream) {
 		return 1;
 	}
 	
-	return !PsTryLock(stream->lock);							// And redirect to the PsTryLock function
+	return !__try_lock(stream->file);							// And redirect to the internal try function
 }

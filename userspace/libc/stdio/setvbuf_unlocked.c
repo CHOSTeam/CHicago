@@ -17,6 +17,7 @@ int setvbuf_unlocked(FILE *restrict stream, char *restrict buf, int mode, size_t
 	if (mode == _IONBF) {											// Disable buffering?
 		if (stream->buf != NULL && stream->buf_free) {				// Yeah! Free the current buffer (if we need to)
 			free(stream->buf);
+			
 		}
 		
 		stream->buf = NULL;											// Yeah!

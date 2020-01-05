@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on October 31 of 2019, at 18:03 BRT
-// Last edited on January 05 of 2020, at 13:56 BRT
-
-#include <chicago/file.h>
+// Last edited on January 05 of 2020, at 18:47 BRT
 
 #include <stdio.h>
 

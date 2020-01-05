@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 02 of 2020, at 10:47 BRT
-// Last edited on January 05 of 2020, at 13:42 BRT
-
-#include <chicago/file.h>
+// Last edited on January 05 of 2020, at 17:39 BRT
 
 #define __STDIO__
 #include <stdio.h>
@@ -24,7 +22,7 @@ size_t fwrite_unlocked(const void *restrict ptr, size_t size, size_t count, FILE
 	
 	if (stream->flags & _IONBF) {																					// Should we use the buffer?
 		for (size_t i = 0; i < count; i++) {																		// Nope, just write each item
-			if (FsWriteFile(stream->file, size, (PUInt8)buf) != size) {
+			if (__write(stream->file, size, buf) != size) {
 				stream->flags |= __FLAGS_ERROR;																		// Failed, return error...
 				return i;
 			}
@@ -43,7 +41,7 @@ size_t fwrite_unlocked(const void *restrict ptr, size_t size, size_t count, FILE
 			
 			if (stream->buf_pos >= stream->buf_size ||
 				((stream->flags & _IOLBF) && buf[i * size + j] == '\n')) {											// Should we flush the buffer?
-				if (FsWriteFile(stream->file, stream->buf_pos, (PUInt8)stream->buf) != stream->buf_pos) {			// Yes, do it!
+				if (__write(stream->file, stream->buf_pos, stream->buf) != stream->buf_pos) {						// Yes, do it!
 					stream->flags |= __FLAGS_ERROR;																	// Failed, set the error flag
 					return i;
 				}

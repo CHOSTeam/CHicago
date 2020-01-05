@@ -1,9 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 01 of 2020, at 21:56 BRT
-// Last edited on January 05 of 2020, at 13:51 BRT
-
-#include <chicago/process.h>
+// Last edited on January 05 of 2020, at 17:20 BRT
 
 #define __STDIO__
 #include <stdio.h>
@@ -17,9 +15,9 @@ FILE *stdin = NULL;
 FILE *stdout = &((FILE){ 0 });
 FILE *stderr = &((FILE){ 0 });
 
-static void __init_stream(FILE *restrict stream, char *mode, IntPtr file, IntPtr lock, char *buf) {
+static void __init_stream(FILE *restrict stream, char *mode, __platform_file_t file, __platform_lock_t lock, char *buf) {
 	stream->file = file;														// Set the file handle
-	stream->lock = lock == -1 ? PsCreateLock() : lock;							// Set/create the lock
+	stream->lock = lock == -1 ? __create_lock() : lock;							// Set/create the lock
 	
 	if (stream->lock == -1) {
 		abort();																// Failed, abort the program...

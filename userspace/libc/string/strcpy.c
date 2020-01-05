@@ -1,10 +1,9 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 03 of 2020, at 10:21 BRT
-// Last edited on January 03 of 2020, at 11:10 BRT
-
-#include <chicago/string.h>
+// Last edited on January 05 of 2020, at 16:22 BRT
 
 char *strcpy(char *restrict s1, const char *restrict s2) {
-	return StrCopyC(s1, (char*)s2);				// Redirect to StrCopyC
+	for (char *d = s1; (*d++ = *s2++);) ;			// We should optimize this later...
+	return s1;
 }
