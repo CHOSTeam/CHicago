@@ -1,7 +1,7 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on December 31 of 2019, at 17:11 BRT
-// Last edited on January 03 of 2020, at 10:56 BRT
+// Last edited on January 05 of 2020, at 22:50 BRT
 
 #ifndef _STDLIB_H
 #define _STDLIB_H
@@ -16,6 +16,7 @@ extern "C"
 {
 #endif
 
+void *aligned_alloc(size_t alignment, size_t size);
 void *calloc(size_t nmemb, size_t size);
 void *malloc(size_t size);
 void free(void *ptr);

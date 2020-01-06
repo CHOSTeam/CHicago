@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on December 29 of 2019, at 19:46 BRT
-# Last edited on January 05 of 2020, at 18:51 BRT
+# Last edited on January 05 of 2020, at 22:51 BRT
 
 PLATFORM ?= chicago
 VERBOSE ?= false
@@ -20,6 +20,7 @@ ifeq ($(PLATFORM),chicago)
 	
 	LIB_SUFFIX := .so
 	PLATFORM_CFLAGS := -fshort-wchar
+	PLATFORM_CUSTOM_ALLOC := true
 	
 	ifeq ($(SUBARCH),32)
 		FULL_BUILD_STRING := $(PLATFORM)-$(ARCH)
@@ -33,9 +34,15 @@ ifeq ($(PLATFORM),chicago)
 		UNSUPPORTED_PLATFORM := true
 	endif
 	
-	PLATFORM_OBJECTS := alloc.c.o exit.c.o file.c.o lock.c.o stream.c.o
+	PLATFORM_OBJECTS := alloc.c.o exit.c.o file.c.o lock.c.o stream.c.o virt.c.o
 else
 	UNSUPPORTED_PLATFORM := true
+endif
+
+ifneq ($(PLATFORM_CUSTOM_ALLOC),true)
+	ALLOC_GENERIC := stdlib/alloc-generic.c.o
+else
+	ALLOC_GENERIC :=
 endif
 
 OBJECTS := assert/__assert.c.o
@@ -49,8 +56,8 @@ OBJECTS += stdio/printf.c.o stdio/printf_unlocked.c.o stdio/putchar.c.o stdio/pu
 OBJECTS += stdio/setbuf.c.o stdio/setbuf_unlocked.c.o stdio/setvbuf.c.o stdio/setvbuf_unlocked.c.o stdio/snprintf.c.o stdio/sprintf.c.o stdio/stdstreams.c.o stdio/ungetc.c.o
 OBJECTS += stdio/ungetc_unlocked.c.o stdio/vfprintf.c.o stdio/vfprintf_unlocked.c.o stdio/vprintf.c.o stdio/vprintf_unlocked.c.o stdio/vsnprintf.c.o stdio/vsprintf.c.o
 
-OBJECTS += stdlib/_Exit.c.o stdlib/abort.c.o stdlib/atexit.c.o stdlib/at_quick_exit.c.o stdlib/calloc.c.o stdlib/exit.c.o stdlib/free.c.o stdlib/malloc.c.o
-OBJECTS += stdlib/quick_exit.c.o stdlib/realloc.c.o
+OBJECTS += stdlib/_Exit.c.o stdlib/aligned_alloc.c.o $(ALLOC_GENERIC) stdlib/abort.c.o stdlib/atexit.c.o stdlib/at_quick_exit.c.o stdlib/calloc.c.o stdlib/exit.c.o
+OBJECTS += stdlib/free.c.o stdlib/malloc.c.o stdlib/quick_exit.c.o stdlib/realloc.c.o
 
 OBJECTS += string/memcmp.c.o string/memcpy.c.o string/memmove.c.o string/memset.c.o string/strcat.c.o string/strcmp.c.o string/strcpy.c.o string/strlen.c.o
 OBJECTS += string/strncat.c.o string/strncmp.c.o string/strncpy.c.o

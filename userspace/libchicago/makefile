@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on October 29 of 2019, at 18:21 BRT
-# Last edited on January 05 of 2020, at 18:51 BRT
+# Last edited on January 05 of 2020, at 20:52 BRT
 
 ARCH ?= x86
 VERBOSE ?= false
@@ -28,13 +28,14 @@ ifeq ($(ARCH),x86)
 	
 	ARCH_OBJECTS := exec/exec.c.o exec/lib.c.o
 	ARCH_OBJECTS += io/file.c.o
-	ARCH_OBJECTS += mm/alloc.c.o mm/shm.c.o mm/virt.c.o
+	ARCH_OBJECTS += mm/shm.c.o mm/virt.c.o
 	ARCH_OBJECTS += sys/ipc.c.o sys/misc.c.o sys/process.c.o
 else
 	UNSUPPORTED_ARCH := true
 endif
 
 OBJECTS := ds/list.c.o
+OBJECTS += mm/alloc.c.o
 OBJECTS += sys/rand.c.o sys/string.c.o
 
 ARCH_OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/$(ARCH)/,$(ARCH_OBJECTS))

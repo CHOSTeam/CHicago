@@ -1,12 +1,14 @@
 // File author is Ítalo Lima Marconato Matias
 //
 // Created on January 05 of 2020, at 17:40 BRT
-// Last edited on January 05 of 2020, at 17:53 BRT
+// Last edited on January 05 of 2020, at 22:27 BRT
 
 #ifndef __CHLIBC_PLATFORM_H
 #define __CHLIBC_PLATFORM_H
 
-#include <chicago/types.h>
+#include <chicago/virt.h>
+
+#define ALLOC_PAGE_SIZE MM_PAGE_SIZE
 
 #define SEEK_SET 0x00
 #define SEEK_CUR 0x01
