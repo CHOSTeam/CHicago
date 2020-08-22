@@ -1,6 +1,3 @@
 [submodule "kernel"]
 	path = kernel
 	url = https://github.com/CHOSTeam/CHicago-Kernel.git
-[submodule "toolchain/chicago"]
-	path = toolchain/chicago
-	url = https://github.com/CHOSTeam/CHicago-Toolchain

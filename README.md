@@ -1,36 +1,11 @@
-<p align=center>
+## Build instructions
 
-<a href="https://github.com/CHOSTeam/CHicago/releases/latest">
-  <img alt="Download the latest version"
-       src="https://img.shields.io/badge/Download-latest-green.svg"/>
+Currently, the whole CHicago kernel, drivers and userspace (the last two were almost inexistent before) are under a rewrite.
+The build environment changed from GNU make to a custom build environment made using only bash scripts, and the kernel is now written in C++ instead of C.
 
-</p>
+You can change the build architecture/sub-architecture by changing the ARCH and SUBARCH environment variable, you can also if the OS is going to be built in debug or "release" mode using the DEBUG environment variable (or by using the 'conf DEBUG [yes/no]' command).
 
-## What architectures CHicago supports?
+Invoke the build environment by going into the root directory of the repository, and calling the env.sh script (remembering to pass any environemnt variable, if required).
+The build environment is going to check if the toolchain is already installed (the path of the toolchain is given using the TOOLCHAIN environment variable), and if it requires any updates.
 
-Currently, CHicago supports x86-32 and x86-64, both via UEFI boot, but in the future CHicago will support ARM (and possibly other architectures) as well.
-
-## Building the ISO
-
-For building the ISO from scratch, you need:
-
-	An Unix-like environment
-	GCC and G++
-	Make
-	Bison
-	Flex
-	GMP
-	MPFR
-	MPC
-	Texinfo
-	Xorriso
-	GNU-EFI (for EFI variants, like x86_32 or x86_64)
-	MTools (for EFI variants, like x86_32 or x86_64)
-
-To build it, go to the root directory and type:
-
-	make
-
-You can append ARCH=\<ARCH\> and SUBARCH=\<SUBARCH\> to change the system architecture, BUILD_CORES=\<CORES_AMOUNT\> to build the toolchain with multiple cores, VERBOSE=true to enable verbose build (good for finding compilation errors) and DEBUG=yes to disable optimizations and make a debug build.
-
-After building everything, you should have your toolchain inside of the toolchain/\<ARCH\> folder and the bootable iso inside of the build folder (chicago-\<ARCH\>_\<SUBARCH\>.iso).
+You can check every command avaliable using the 'h' command, but to start the build you can use the 'b' command.

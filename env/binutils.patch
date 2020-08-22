@@ -1,0 +1,159 @@
+diff -uarN a/bfd/config.bfd b/bfd/config.bfd
+--- a/bfd/config.bfd    2020-01-18 10:55:47.000000000 -0300
++++ b/bfd/config.bfd    2020-06-16 21:59:50.607669200 -0300
+@@ -604,6 +604,18 @@
+     targ_defvec=i386_aout_bsd_vec
+     targ_underscore=yes
+     ;;
++  i[3-7]86-*-chicago*)
++    targ_defvec=i386_elf32_vec
++    targ_selvecs=
++    targ64_selvecs=x86_64_elf64_vec
++    ;;
++#ifdef BFD64
++  x86_64-*-chicago*)
++    targ_defvec=x86_64_elf64_vec
++    targ_selvecs=i386_elf32_vec
++    want64=true
++    ;;
++#endif
+   i[3-7]86-*-dragonfly*)
+     targ_defvec=i386_elf32_vec
+     targ_selvecs=iamcu_elf32_vec
+diff -uarN a/config.sub b/config.sub
+--- a/config.sub        2020-01-18 10:55:47.000000000 -0300
++++ b/config.sub        2020-06-16 22:00:33.033200000 -0300
+@@ -1343,7 +1343,7 @@
+             | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
+             | sym* | kopensolaris* | plan9* \
+             | amigaos* | amigados* | msdos* | newsos* | unicos* | aof* \
+-            | aos* | aros* | cloudabi* | sortix* | twizzler* \
++            | aos* | aros* | cloudabi* | sortix* | twizzler* | chicago* \
+             | nindy* | vxsim* | vxworks* | ebmon* | hms* | mvs* \
+             | clix* | riscos* | uniplus* | iris* | isc* | rtu* | xenix* \
+             | knetbsd* | mirbsd* | netbsd* \
+diff -uarN a/gas/configure.tgt b/gas/configure.tgt
+--- a/gas/configure.tgt 2020-01-18 10:55:47.000000000 -0300
++++ b/gas/configure.tgt 2020-06-16 22:01:04.272676100 -0300
+@@ -216,6 +216,7 @@
+
+   i386-*-beospe*)                      fmt=coff em=pe ;;
+   i386-*-beos*)                                fmt=elf ;;
++  i386-*-chicago*)                     fmt=elf ;;
+   i386-*-elfiamcu)                     fmt=elf arch=iamcu ;;
+   i386-*-elf*)                         fmt=elf ;;
+   i386-*-fuchsia*)                     fmt=elf ;;
+diff -uarN a/ld/configure.tgt b/ld/configure.tgt
+--- a/ld/configure.tgt  2020-01-18 10:55:48.000000000 -0300
++++ b/ld/configure.tgt  2020-06-16 22:02:52.025748300 -0300
+@@ -323,6 +323,15 @@
+ i[3-7]86-*-bsdi*)      targ_emul=i386bsd
+                        targ_extra_ofiles=
+                        ;;
++i[3-7]86-*-chicago*)
++                       targ_emul=elf_i386_chicago
++                       targ_extra_emuls=elf_i386
++                       targ64_extra_emuls="elf_x86_64_chicago elf_x86_64"
++                       ;;
++x86_64-*-chicago*)
++                       targ_emul=elf_x86_64_chicago
++                       targ_extra_emuls="elf_i386_chicago elf_x86_64 elf_i386"
++                       ;;
+ i[3-7]86-*-linux-*)    targ_emul=elf_i386
+                        targ_extra_emuls="elf_iamcu"
+                        targ64_extra_emuls="elf_x86_64 elf32_x86_64 elf_l1om elf_k1om"
+@@ -1035,6 +1044,10 @@
+ NATIVE_LIB_DIRS='/usr/local/lib /lib /usr/lib'
+ case "${target}" in
+
++*-*-chicago*)
++  NATIVE_LIB_DIRS='/System/Libraries /Development/Libraries'
++  ;;
++
+ *-*-dragonfly*)
+   NATIVE_LIB_DIRS='/lib /usr/lib /usr/pkg/lib /usr/local/lib'
+   ;;
+diff -uarN a/ld/emulparams/elf_i386_chicago.sh b/ld/emulparams/elf_i386_chicago.sh
+--- a/ld/emulparams/elf_i386_chicago.sh 1969-12-31 21:00:00.000000000 -0300
++++ b/ld/emulparams/elf_i386_chicago.sh 2020-06-16 22:04:28.825107600 -0300
+@@ -0,0 +1,4 @@
++. ${srcdir}/emulparams/elf_i386.sh
++GENERATE_SHLIB_SCRIPT=yes
++GENERATE_PIE_SCRIPT=yes
++ENTRY=AppEntry
+diff -uarN a/ld/emulparams/elf_x86_64_chicago.sh b/ld/emulparams/elf_x86_64_chicago.sh
+--- a/ld/emulparams/elf_x86_64_chicago.sh       1969-12-31 21:00:00.000000000 -0300
++++ b/ld/emulparams/elf_x86_64_chicago.sh       2020-06-16 22:04:46.333771400 -0300
+@@ -0,0 +1,2 @@
++. ${srcdir}/emulparams/elf_x86_64.sh
++ENTRY=AppEntry
+diff -uarN a/ld/Makefile.am b/ld/Makefile.am
+--- a/ld/Makefile.am    2020-01-30 04:15:56.000000000 -0300
++++ b/ld/Makefile.am    2020-06-16 22:06:08.283166200 -0300
+@@ -290,6 +290,7 @@
+        eelf32z80.c \
+        eelf_i386.c \
+        eelf_i386_be.c \
++       eelf_i386_chicago.c \
+        eelf_i386_fbsd.c \
+        eelf_i386_ldso.c \
+        eelf_i386_nacl.c \
+@@ -459,6 +460,7 @@
+        eelf_k1om.c \
+        eelf_k1om_fbsd.c \
+        eelf_x86_64.c \
++       eelf_x86_64_chicago.c \
+        eelf_x86_64_cloudabi.c \
+        eelf_x86_64_fbsd.c \
+        eelf_x86_64_nacl.c \
+@@ -778,6 +780,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf32z80.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_be.Pc@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_chicago.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_ldso.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_nacl.Pc@am__quote@
+@@ -943,6 +946,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_k1om.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_k1om_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64.Pc@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_chicago.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_cloudabi.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_nacl.Pc@am__quote@
+diff -uarN a/ld/Makefile.in b/ld/Makefile.in
+--- a/ld/Makefile.in    2020-02-01 08:50:25.000000000 -0300
++++ b/ld/Makefile.in    2020-06-16 22:07:01.639601600 -0300
+@@ -780,6 +780,7 @@
+        eelf32z80.c \
+        eelf_i386.c \
+        eelf_i386_be.c \
++       eelf_i386_chicago.c \
+        eelf_i386_fbsd.c \
+        eelf_i386_ldso.c \
+        eelf_i386_nacl.c \
+@@ -948,6 +949,7 @@
+        eelf_k1om.c \
+        eelf_k1om_fbsd.c \
+        eelf_x86_64.c \
++       eelf_x86_64_chicago.c \
+        eelf_x86_64_cloudabi.c \
+        eelf_x86_64_fbsd.c \
+        eelf_x86_64_nacl.c \
+@@ -2382,6 +2384,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf32z80.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_be.Pc@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_chicago.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_ldso.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_i386_nacl.Pc@am__quote@
+@@ -2547,6 +2550,7 @@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_k1om.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_k1om_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64.Pc@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_chicago.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_cloudabi.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_fbsd.Pc@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eelf_x86_64_nacl.Pc@am__quote@
