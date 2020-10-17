@@ -1,20 +1,30 @@
 #!/bin/bash
 
 force_rebuild() {
+	declare type=$1
+	declare name=$2
+	
+	if [ "$type" == "drv" ] && [ -e $ROOT_DIR/kernel/drvlib/build/drvlib-$FULL_ARCH-$([ \"$DEBUG\" == \"yes\" ] && printf dbg || printf rel).a ] &&
+	   [ $ROOT_DIR/kernel/drvlib/build/drvlib-$FULL_ARCH-$([ \"$DEBUG\" == \"yes\" ] && printf dbg || printf rel).a -nt $name ]; then
+		printf "1"
+	fi
+	
 	printf "0"
 }
 
 get_ext() {
-	local type=$1
+	declare type=$1
 	
 	if [ "$type" == "app" ]; then
 		printf ".che"
 	elif [ "$type" == "boot" ]; then
 		printf ".efi"
+	elif [ "$type" == "drvlib" ]; then
+		printf ".a"
 	elif [ "$type" == "drv" ]; then
 		printf ".chd"
 	elif [ "$type" == "lib" ]; then
-		printf ".so"
+		printf ".chl"
 	fi
 }
 
@@ -31,8 +41,12 @@ get_incs() {
 		return
 	fi
 	
-	if [ "$type" == "kernel" ] || [ "$type" == "drv" ]; then
+	if [ "$type" == "kernel" ] || [ "$type" == "drvlib" ] || [ "$type" == "drv" ]; then
 		printf -- "-ffreestanding -I$spath/include -I$spath/arch/x86/include -I$spath/arch/x86/include$SUBARCH"
+		
+		if [ "$type" == "drv" ]; then
+			printf -- " -I$ROOT_DIR/kernel/drvlib/include -I$ROOT_DIR/kernel/drvlib/arch/x86/include -I$ROOT_DIR/kernel/drvlib/arch/x86/include$SUBARCH"
+		fi
 	elif [ "$type" == "boot" ]; then
 		printf -- "-ffreestanding -I$spath/include -I$spath/subarch/$SUBARCH/include -I$TOOLCHAIN/include/efi -I$TOOLCHAIN/include/efi/protocol"
 		
@@ -96,6 +110,7 @@ compile() {
 	local defs="-DARCH=\"$FULL_ARCH\" -DVERSION=\"$VERSION\""
 	local opts="-funroll-loops -ffast-math"
 	local warns="-Wall -Wextra -Wno-implicit-fallthrough"
+	local extra=""
 	
 	if [ "$ext" == "c" ]; then
 		opts+=" -std=c2x"
@@ -103,7 +118,7 @@ compile() {
 	elif [ "$ext" != "asm" ] && [ "$ext" != "s" ] && [ "$ext" != "S" ]; then
 		opts+=" -std=c++2a"
 		
-		if [ "$type" == "boot" ] || [ "$type" == "drv" ] || [ "$type" == "kernel" ]; then
+		if [ "$type" == "boot" ] || [ "$type" == "kernel" ] || [ "$type" == "drvlib" ] || [ "$type" == "drv" ]; then
 			opts+=" -fno-rtti -fno-exceptions -fno-use-cxa-atexit"
 		fi
 	fi
@@ -119,20 +134,16 @@ compile() {
 		opts+=" -O3"
 	fi
 	
-	if [ "$type" == "kernel" ]; then
-		defs+=" -DKERNEL"
-	fi
-	
-	if [ "$type" == "boot" ] || [ "$type" == "drv" ] || [ "$type" == "kernel" ]; then
+	if [ "$type" == "boot" ] || [ "$type" == "kernel" ] || [ "$type" == "drvlib" ] || [ "$type" == "drv" ]; then
 		opts+=" -fno-plt -no-pie -fno-pic -ffreestanding -fno-stack-protector"
 	fi
 	
-	if [ "$type" == "drv" ] || [ "$type" == "kernel" ]; then
+	if [ "$type" == "kernel" ] || [ "$type" == "drvlib" ] || [ "$type" == "drv" ]; then
 		if [ "$type" == "kernel" ]; then
 			if [ "$SUBARCH" == "64" ]; then
-				defs+=" -DELF_MACHINE=62"
+				defs+=" -DELF_CLASS=0x02 -DELF_DATA=0x01 -DELF_MACHINE=0x3E"
 			else
-				defs+=" -DELF_MACHINE=3"
+				defs+=" -DELF_CLASS=0x01 -DELF_DATA=0x01 -DELF_MACHINE=0x03"
 			fi
 		fi
 		
@@ -146,15 +157,12 @@ compile() {
 	# And now let's compile!
 	
 	if [ "$ext" == "asm" ] || [ "$ext" == "s" ] || [ "$ext" == "S" ]; then
-		printf "AS: $name\n"
-		
 		if [ "$SUBARCH" == "64" ]; then
 			$as --defsym ARCH_64=1 -o $opath/$name.o $spath/$name
 		else
 			$as -o $opath/$name.o $spath/$name
 		fi
 	else
-		printf "CC: $name\n"
 		$cc $extra $defs $incs $opts $warns -c -o $opath/$name.o $spath/$name
 	fi
 	
@@ -177,20 +185,22 @@ link() {
 	else
 		local ld="${TARGET}gcc"
 		local cc="${TARGET}gcc"
+		local ar="${TARGET}ar"
 	fi
 	
 	# We (may) need to get the crtbegin and the crti, else, we gonna have some problems...
 	
-	if [ "$type" == "drv" ] || [ "$type" == "kernel" ]; then
+	if [ "$type" == "kernel" ] || [ "$type" == "drvlib" ]; then
 		local crtbegin="$($cc -print-file-name=crti.o) $($cc -print-file-name=crtbegin.o)"
 		local crtend="$($cc -print-file-name=crtend.o) $($cc -print-file-name=crtn.o)"
 	fi
 	
 	# Get all the linker flags
 	
-	if [ "$type" == "boot" ] || [ "$type" == "drv" ] || [ "$type" == "kernel" ]; then
+	if [ "$type" == "boot" ] || [ "$type" == "kernel" ] || [ "$type" == "drv" ]; then
 		local flags="-ffreestanding"
 		local after="-lgcc"
+		local extra=""
 		
 		if [ "$type" == "boot" ]; then
 			flags+=" -shared -e $([ \"$SUBARCH\" == \"32\" ] && printf _)efi_main -Wl,-dll -Wl,--subsystem,10 -L$TOOLCHAIN/lib"
@@ -200,7 +210,8 @@ link() {
 		fi
 		
 		if [ "$type" == "drv" ]; then
-			flags+=" -fno-plt -r"
+			flags+=" -fno-plt -fno-common -r"
+			extra+="$ROOT_DIR/kernel/drvlib/build/drvlib-$FULL_ARCH-$([ \"$DEBUG\" == \"yes\" ] && printf dbg || printf rel).a"
 		else
 			flags+=" -fno-plt -no-pie -fno-pic -nostdlib"
 		fi
@@ -212,8 +223,21 @@ link() {
 	
 	# And now let's link it!
 	
-	printf "LD: $(basename $name)\n"
+	local res=0
 	
-	$ld $flags -o $name $crtbegin $objs $extra $crtend $after
-	return $?
+	if [ "$type" == "drvlib" ]; then
+		$ar -crs $name $crtbegin $objs $extra $crtend $after
+		res=$?
+	else
+		$ld $flags -o $name $crtbegin $objs $extra $crtend $after
+		res=$?
+		
+		if [ $res == 0 ]; then
+			if [ "$type" == "app" ] || [ "$type" == "drv" ]; then
+				chmod +x $name
+			fi
+		fi
+	fi
+	
+	return $res
 }

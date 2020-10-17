@@ -8,7 +8,7 @@ GCC_VERSION="10.1.0"
 # CHicago version (also this shell version)
 
 SIA_VERSION="1.0"
-VERSION="next.0"
+VERSION="next.1"
 
 # Get the root directory of the source code
 
@@ -331,13 +331,18 @@ set_config() {
 }
 
 build() {
+	declare bld
+	declare deps
+	declare aprojs
+	declare nprojs
 	declare name=$1
+	declare type=$2
 	
 	if [ "$name" == "$ppath" ]; then
 		# As you may already think, the current project is already open, so we don't need to manually
 		# open it
 		
-		local bld=("${proj[@]}")
+		bld=("${proj[@]}")
 	else
 		# We need to manually open the project
 		
@@ -359,13 +364,13 @@ build() {
 	# First, convert the dependency list (which is currently a string) into an array
 	
 	if [ "${bld[2]}" == "[none]" ]; then
-		local aprojs=()
+		aprojs=()
 	else
 		readarray -d' ' -t aprojs < <(printf "${bld[2]}")
 	fi
 	
 	if [ "${bld[3]}" == "[none]" ]; then
-		local nprojs=()
+		nprojs=()
 	else
 		readarray -d' ' -t nprojs < <(printf "${bld[3]}")
 	fi
@@ -373,9 +378,7 @@ build() {
 	# Now, build the dependencies (arch-specific first, followed by all the other ones)
 	
 	for i in "${aprojs[@]}"; do
-		printf "DEP: $i/$ARCH\n"
-		
-		build "$i/$ARCH"
+		build "$i/$ARCH" "DEP:"
 		res=$?
 		
 		if [ $res != 0 ]; then
@@ -384,15 +387,15 @@ build() {
 	done
 	
 	for i in "${nprojs[@]}"; do
-		printf "DEP: $i\n"
-		
-		build "$i"
+		build "$i" "DEP:"
 		res=$?
 		
 		if [ $res != 0 ]; then
 			return $res
 		fi
 	done
+	
+	printf "$type $name\n"
 	
 	# Get the path where the source files are, where object files are going to be built,
 	# and where the final binary is going to be built
@@ -436,6 +439,7 @@ build() {
 	
 	local objs=()
 	local rebld=0
+	local pids=()
 	
 	for i in "${srcs[@]}"; do
 		objs+=("$opath/$i.o")
@@ -451,6 +455,8 @@ build() {
 		fi
 		
 		# Check the date of all the deps
+		
+		deps=()
 		
 		if [ $do == 0 ]; then
 			readarray -d' ' -t deps < <(get_deps $spath $i ${bld[4]} | sed -e 's@.*\.o: @@' -e ':b;$!N;/\\\n /s/\\\n //;tb;P;D')
@@ -469,14 +475,19 @@ build() {
 		
 		# Now, just compile it :)
 		
-		compile $spath $opath $i ${bld[4]}
-		res=$?
+		compile $spath $opath $i ${bld[4]} & pids+=($!)
+		rebld=1
+	done
+	
+	# Wait until all the files have been compiled, and check if there was no error
+	
+	for pid in ${pids[*]}; do
+		wait $pid
+		local res=$?
 		
 		if [ $res != 0 ]; then
 			return $res
 		fi
-		
-		rebld=1
 	done
 	
 	if [ "$name" == "$ppath" ]; then
@@ -490,6 +501,7 @@ build() {
 	
 	if [ -f $sname ]; then (
 		rebld=0
+		pids=()
 		
 		source $sname
 		
@@ -506,6 +518,8 @@ build() {
 			fi
 			
 			# Check the date of all the deps
+			
+			deps=()
 			
 			if [ $do == 0 ]; then
 				readarray -d' ' -t deps < <(get_deps $spath $i ${bld[4]} | sed -e 's@.*\.o: @@' -e ':b;$!N;/\\\n /s/\\\n //;tb;P;D')
@@ -524,8 +538,15 @@ build() {
 			
 			# Now, just compile it :)
 			
-			compile $spath $opath $i ${bld[4]}
-			res=$?
+			compile $spath $opath $i ${bld[4]} & pids+=($!)
+			rebld=1
+		done
+		
+		# Wait until all the files have been compiled, and check if there was no error
+		
+		for pid in ${pids[*]}; do
+			wait $pid
+			local res=$?
 			
 			if [ $res != 0 ]; then
 				if [ -f temp.txt ]; then
@@ -534,8 +555,6 @@ build() {
 				
 				return ${res#-}
 			fi
-			
-			rebld=1
 		done
 		
 		if [ $rebld == 1 ]; then
@@ -565,7 +584,7 @@ build() {
 		rebld=1
 	fi
 	
-	if [ "$(force_rebuild ${bld[4]})" == "1" ] &&
+	if [ "$(force_rebuild ${bld[4]} $bname)" == "1" ] &&
 	   [ ${#objs[@]} != 0 ]; then
 		rebld=1
 	fi
@@ -636,7 +655,7 @@ loop_parse() {
 		
 		# And call the main build function
 		
-		build "$ppath"
+		build "$ppath" "PROJ:"
 	elif [ "${argv[0]}" == "conf" ]; then
 		# conf: list/get/set config
 		# The amount of arguments say what we gonna do

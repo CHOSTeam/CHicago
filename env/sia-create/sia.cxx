@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on June 20 of 2020, at 16:00 BRT
- * Last edited on Jult 17 of 2020, at 19:09 BRT */
+ * Last edited on October 10 of 2020, at 15:43 BRT */
 
 #include <cstring>
 #include <ctime>
@@ -477,8 +477,7 @@ bool sia_create(string path, string kernel, string base) {
 	
 	stream.close();
 	
-	if ((header.kernel_offset = alloc_file_entry(hfile, "chkrnl.elf",
-												 SIA_FLAGS_READ | SIA_FLAGS_EXEC)) == 0) {
+	if ((header.kernel_offset = alloc_file_entry(hfile, "chkrnl.elf", SIA_FLAGS_READ)) == 0) {
 		cout << "Error: Couldn't write to the kernel file entry." << endl;
 		hfile.close();
 		return false;

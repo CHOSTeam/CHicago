@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on June 20 of 2020, at 15:53 BRT
- * Last edited on July 17 of 2020, at 19:10 BRT */
+ * Last edited on August 24 of 2020, at 10:51 BRT */
 
 #ifndef __SIA_HXX__
 #define __SIA_HXX__
@@ -31,7 +31,7 @@ struct __attribute__((packed)) sia_header_t {
 	uint64_t root_offset;
 };
 
-struct __attribute__((packed)) sia_file_t{
+struct __attribute__((packed)) sia_file_t {
 	uint64_t next;
 	uint16_t flags;
 	uint64_t size;
