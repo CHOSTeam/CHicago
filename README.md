@@ -1,11 +1,9 @@
-## Build instructions
+# CHicago
 
-Currently, the whole CHicago kernel, drivers and userspace (the last two were almost inexistent before) are under a rewrite.
-The build environment changed from GNU make to a custom build environment made using only bash scripts, and the kernel is now written in C++ instead of C.
+CHicago is a portable operating system developed from scratch. The code is in C/C++ (+ a bit of assembly).
 
-You can change the build architecture/sub-architecture by changing the ARCH and SUBARCH environment variable, you can also if the OS is going to be built in debug or "release" mode using the DEBUG environment variable (or by using the 'conf DEBUG [yes/no]' command).
+# Building
 
-Invoke the build environment by going into the root directory of the repository, and calling the env.sh script (remembering to pass any environemnt variable, if required).
-The build environment is going to check if the toolchain is already installed (the path of the toolchain is given using the TOOLCHAIN environment variable), and if it requires any updates.
+CHicago uses Clang as the compiler, LLD as the linker, CMake as the make generator, and Ninja as the default CMake target. Our Clang/LLD was compiled with an extra target added, and for now the prebuilt toolchain file is not avaliable for download. This will be changed pretty soon (recompiling libgcc and llvm takes way too long on WSL).
 
-You can check every command avaliable using the 'h' command, but to start the build you can use the 'b' command.
+If you already installed the toolchain (after it was made public for download), you can source the 'host-tools/env' file (.sh for bash-compatible, .fish for fish) and run 'build' on the root directory, this will create the build directory and invoke CMake with the right arguments.
