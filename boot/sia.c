@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on June 21 of 2020, at 00:03 BRT
- * Last edited on November 29 of 2020, at 22:56 BRT */
+ * Last edited on December 04 of 2020, at 14:18 BRT */
 
 #include <elf.h>
 #include <sia.h>
@@ -230,13 +230,14 @@ EFI_STATUS SiaLoadKernel(CHAR8 *Buffer, UINTN Size, UINTN *Entry, UINTN *StartPh
 	
 #ifndef _NDEBUG
 	Print(L"Loaded the kernel image\n");
-	Print(L"    Entry Point: 0x%x\n", *Entry);
 #ifdef _WIN64
+	Print(L"    Entry Point: 0x%llx\n", *Entry);
 	Print(L"    Starts at the physical address 0x%llx (virtual address 0x%llx)\n",
 		  *StartPhys, *StartVirt);
 	Print(L"    Ends at the physical address 0x%llx (virtual address 0x%llx)\n",
 		  *EndPhys, *EndVirt);
 #else
+	Print(L"    Entry Point: 0x%x\n", *Entry);
 	Print(L"    Starts at the physical address 0x%x (virtual address 0x%x)\n",
 		  *StartPhys, *StartVirt);
 	Print(L"    Ends at the physical address 0x%x (virtual address 0x%x)\n",

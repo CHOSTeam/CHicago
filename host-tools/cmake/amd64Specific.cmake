@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on November 28 of 2020, at 13:13 BRT
-# Last edited on November 30 of 2020, at 16:51 BRT
+# Last edited on December 04 of 2020, at 13:58 BRT
 
 set(CLANG_KERNEL_TARGET "x86_64-chicago")
 set(CLANG_EFI_TARGET "x86_64")
@@ -26,6 +26,10 @@ set(KERNEL_ARCH_SOURCES misc/debug.cxx
 						sys/process.cxx
 						sys/timer.cxx)
 list(TRANSFORM KERNEL_ARCH_SOURCES PREPEND arch/x86/)
+
+function(setup_boot_arch target)
+	target_compile_options(${target} PRIVATE $<$<NOT:$<COMPILE_LANGUAGE:ASM-ATT>>:-mcmodel=kernel -mno-red-zone>)
+endfunction()
 
 function(setup_kernel_arch target)
 	target_compile_options(${target} PRIVATE $<$<NOT:$<COMPILE_LANGUAGE:ASM-ATT>>:-mcmodel=kernel -mno-red-zone>

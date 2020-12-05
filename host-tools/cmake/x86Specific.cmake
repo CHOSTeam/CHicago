@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on November 28 of 2020, at 11:05 BRT
-# Last edited on November 30 of 2020, at 16:50 BRT
+# Last edited on December 05 of 2020, at 13:00 BRT
 
 set(CLANG_KERNEL_TARGET "i686-chicago")
 set(CLANG_EFI_TARGET "i686")
@@ -27,7 +27,12 @@ set(KERNEL_ARCH_SOURCES misc/debug.cxx
 						sys/timer.cxx)
 list(TRANSFORM KERNEL_ARCH_SOURCES PREPEND arch/x86/)
 
+function(setup_boot_arch target)
+endfunction()
+
 function(setup_kernel_arch target)
-	target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ASM-ATT>:-x assembler-with-cpp>)
+	target_compile_options(${target} PRIVATE -msse -msse2 -msse3 -mssse3
+											 $<$<NOT:$<COMPILE_LANGUAGE:ASM-ATT>>:-mfpmath=sse>
+											 $<$<COMPILE_LANGUAGE:ASM-ATT>:-x assembler-with-cpp>)
 	target_compile_definitions(${target} PRIVATE ELF_CLASS=0x01 ELF_DATA=0x01 ELF_MACHINE=0x03)
 endfunction()

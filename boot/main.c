@@ -1,14 +1,14 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on November 29 of 2020, at 15:58 BRT
- * Last edited on October 29 of 2020, at 23:14 BRT */
+ * Last edited on December 04 of 2020, at 17:51 BRT */
 
 #include <stddef.h>
 #include <sia.h>
 
 EFI_HANDLE *EspHandle;
 
-#if defined(_X86_) || defined(_AMD64_)
+#if defined(__i386__) || defined(__amd64__)
 static VOID InitFPU(VOID) {
 	UINT16 cw0 = 0x37E, cw1 = 0x37A;
 	UINTN cr0, cr4;
@@ -17,22 +17,22 @@ static VOID InitFPU(VOID) {
 	 * Those bits are: the EMulation bit, the Monitor co-Processor bit, the FXsave/fxrStoR bits, and also set
 	 * that the OS will handle unmasked SIMD exceptions. */
 	
-	__asm__ __volatile__("mov %%cr0, %0" : "=r"(cr0));
-	__asm__ __volatile__("mov %%cr4, %0" : "=r"(cr4));
+	asm volatile("mov %%cr0, %0" : "=r"(cr0));
+	asm volatile("mov %%cr4, %0" : "=r"(cr4));
 	
 	cr0 &= ~(1 << 2);
 	cr0 |= 1 << 1;
 	cr4 |= (1 << 9) | (1 << 10);
 	
-	__asm__ __volatile__("mov %0, %%cr0" :: "r"(cr0));
-	__asm__ __volatile__("mov %0, %%cr4" :: "r"(cr4));
+	asm volatile("mov %0, %%cr0" :: "r"(cr0));
+	asm volatile("mov %0, %%cr4" :: "r"(cr4));
 	
 	/* Now, let's setup the default FPU state, and make sure that both division-by-zero and invalid operands
 	 * will throw exceptions. */
 	
-	__asm__ __volatile__("fninit");
-	__asm__ __volatile__("fldcw %0" :: "m"(cw0));
-	__asm__ __volatile__("fldcw %0" :: "m"(cw1));
+	asm volatile("fninit");
+	asm volatile("fldcw %0" :: "m"(cw0));
+	asm volatile("fldcw %0" :: "m"(cw1));
 }
 #endif
 
@@ -377,7 +377,7 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 		return Status;
 	}
 	
-#ifdef _X86_
+#if defined(__i386__)
 	/* Setup the FPU, disable interrupts, else, we're going to get some recursive page faults on any interrupt, enable paging,
 	 * and jump into the kernel entry point (which is not the kernel main function btw). */
 	
@@ -391,6 +391,15 @@ EFI_STATUS EfiMain(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 	asm volatile("mov %0, %%esp; add %%ebx, %%esp" ::
 				 "a"(((offsetof(BOOT_INFO, KernelStack) + sizeof(BootInfo->KernelStack)) & -8) + 12));
 	asm volatile("push %ebx; call *%ecx");
+#elif defined(__amd64__)
+	InitFPU();
+	
+	asm volatile("cli");
+	asm volatile("mov %0, %%rbx; mov %1, %%rdi" :: "r"(KernelEntry), "r"(BootInfoVirt) : "%rbx", "%rdi");
+	asm volatile("mov %0, %%cr3" :: "a"(DirectoryPhys));
+	asm volatile("mov %0, %%rsp; add %%rdi, %%rsp" ::
+						 "a"(((offsetof(BOOT_INFO, KernelStack) + sizeof(BootInfo->KernelStack)) & -16) + 16));
+	asm volatile("call *%rbx");
 #else
 #error Add this architecture jump to kernel code
 #endif

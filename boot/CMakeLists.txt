@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on November 29 of 2020, at 15:43 BRT
-# Last edited on November 29 of 2020, at 23:04 BRT
+# Last edited on December 04 of 2020, at 13:59 BRT
 
 cmake_minimum_required(VERSION 3.12.0)
 
@@ -39,12 +39,8 @@ target_compile_options(osldr.efi PRIVATE $<$<NOT:$<COMPILE_LANGUAGE:ASM-ATT>>:-f
 																			  -fno-strict-aliasing
 																			  -fno-stack-protector
 																			  -fno-stack-check>)
-
-if(CHOS_ARCH STREQUAL "amd64")
-target_compile_options(osldr.efi PRIVATE $<$<NOT:$<COMPILE_LANGUAGE:ASM-ATT>>:-mno-red-zone>)
-endif()
-
 target_link_options(osldr.efi PRIVATE -target ${CLANG_EFI_TARGET}-unknown-windows-gnu -fuse-ld=lld -nostdlib
 									  -Wl,/entry:EfiMain -Wl,/subsystem:efi_application -Wl,/base:0x10000000)
 target_link_libraries(osldr.efi ${CHOS_TOOLCHAIN}/efi/lib/${CHOS_ARCH}/efi.lib
 								${CHOS_TOOLCHAIN}/efi/lib/${CHOS_ARCH}/sup.lib)
+setup_boot_arch(osldr.efi)								
