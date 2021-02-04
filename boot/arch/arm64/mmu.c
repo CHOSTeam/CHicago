@@ -1,14 +1,11 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 12:46 BRT
- * Last edited on February 04 of 2021 at 13:06 BRT */
+ * Last edited on February 04 of 2021 at 17:42 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
 #include <efi/lib.h>
-
-static UIntN MmuHigherHalfStart = 0xFFFFFF8000000000, MmuHigherHalfEnd = 0xFFFFFFFF80000000;
-static Boolean MmuSupports48 = False;
 
 static UInt64 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Type) {
     UInt64 base = Physical | MMU_PRESENT | MMU_INNER_SHARE | MMU_ACCESS;
@@ -61,7 +58,7 @@ static EfiStatus MmuMap(UInt64 **PageDir, CHMapping **List, CHMapping *Entry) {
          * be mapped by recursive paging). */
 
         return EFI_SUCCESS;
-    } else if (Entry->Virtual >= MmuHigherHalfStart) {
+    } else if (Entry->Virtual >= 0xFFFF000000000000) {
         /* Arm64 divides the address space in two (that is, uses two different page directories for the address
          * space), the first one is for the lower half, and the second one, as you may imagine, for the higher half.
          * And we need to handle when to use each one. */
@@ -75,13 +72,11 @@ static EfiStatus MmuMap(UInt64 **PageDir, CHMapping **List, CHMapping *Entry) {
     EfiStatus status;
     UIntN start = 0, size = Entry->Size, level;
 
-    /* If we have 48-bits support, we need to skip/alloc the first level, as we're not going to handle checking if we
-     * support 512GB pages. */
+    /* Skip/alloc the first level, as we're not going to handle checking if we support 512GB pages (yet). */
 
 s:  level = (UIntN)PageDir[high];
 
-    if (MmuSupports48 && EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 39,
-                                                          &level)))) {
+    if (EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 39, &level)))) {
         return status;
     }
 
@@ -93,10 +88,9 @@ s:  level = (UIntN)PageDir[high];
         start += 0x40000000;
         size -= 0x40000000;
 
-        /* Check if we haven't exceeded the limit of this 512GB entry (if we are on 48-bits, of course). */
+        /* Check if we haven't exceeded the limit of this entry. */
 
-        if (MmuSupports48 && (((Entry->Virtual + start) >> 39) & 0x1FF) !=
-                              (((Entry->Virtual + start - 0x40000000) >> 39) & 0x1FF)) {
+        if ((((Entry->Virtual + start) >> 39) & 0x1FF) != (((Entry->Virtual + start - 0x40000000) >> 39) & 0x1FF)) {
             goto s;
         }
     }
@@ -144,21 +138,16 @@ s:  level = (UIntN)PageDir[high];
     return EFI_SUCCESS;
 }
 
-EfiStatus ArchInitCHicagoMmu(UInt16 Features, CHMapping **List, Void **Out) {
+EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
     if (List == Null || *List == Null || Out == Null) {
         return EFI_INVALID_PARAMETER;
     }
 
-    /* First, start by gattering if we can use 48-bits addressing (and so what is going be the start of the higher
-     * half), and if the required granularities are supported. */
+    /* First, start by calling GetFeatures (so that we know if 4KiB pages are supported). */
 
     if (!ArchGetFeatures(MenuEntryCHicago)) {
         EfiDrawString("The system MMU is not supported.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         return EFI_UNSUPPORTED;
-    } else if (Features & SIA_ARM64_48_BITS) {
-        MmuHigherHalfStart = 0xFFFF000000000000;
-        MmuHigherHalfEnd = 0xFFFFFF0000000000;
-        MmuSupports48 = True;
     }
 
     /* Reserve/allocate the paging addresses, and convert the addresses into pointers (as our map function takes two

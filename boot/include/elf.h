@@ -1,13 +1,13 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 30 of 2021, at 11:13 BRT
- * Last edited on January 30 of 2021 at 11:26 BRT */
+ * Last edited on February 04 of 2021 at 16:34 BRT */
 
 #pragma once
 
 #include <efi/types.h>
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     UInt8 Ident[16];
 	UInt16 Type, Machine;
 	UInt32 Version;
@@ -17,9 +17,9 @@ typedef struct {
 	UInt16 HeaderSize,
 	       ProgHeaderEntSize, ProgHeaderCount,
 	       SectHeaderEntSize, SectHeaderCount, StrSectHeaderIndex;
-} __attribute__((packed)) ElfHeader;
+} ElfHeader;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     UInt32 Type;
 #ifdef _WIN64
     UInt32 Flags;
@@ -30,4 +30,4 @@ typedef struct {
     UInt32 Flags;
 #endif
     UIntN Align;
-} __attribute__((packed)) ElfProgHeader;
+} ElfProgHeader;

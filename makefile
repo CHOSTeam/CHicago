@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 28 of 2020, at 16:05 BRT
-# Last edited on February 04 of 2021, at 15:55 BRT
+# Last edited on February 04 of 2021, at 17:39 BRT
 
 ARCH ?= arm64
 DEBUG ?= false
@@ -10,9 +10,7 @@ VERBOSE ?= false
 # Only handle the ARCHs with special flags here (like arm64 and amd64, as they have the VA flag). Proper supported arch
 # support should be handled inside each module.
 
-ifeq ($(ARCH),arm64)
-	VA ?= 39
-else ifeq ($(ARCH),amd64)
+ifeq ($(ARCH),amd64)
 	VA ?= 48
 endif
 

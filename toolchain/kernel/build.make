@@ -1,23 +1,20 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 03 of 2021, at 18:13 BRT
+# Last edited on February 04 of 2021, at 17:40 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are (and ROOT_DIR were the kernel project is).
 
 ifeq ($(ARCH),arm64)
-    VA ?= 39
     FULL_ARCH := arm64
-    OUT := $(OUT)-va$(VA)
 
     CXX := aarch64-elf-gcc
 
     PRE_LIBS := $(shell $(CXX) -print-file-name=crti.o)
     LIBS := $(shell $(CXX) -print-file-name=crtn.o)
-    DEFS := -DVA=$(VA)
 
-    LINK_SCRIPT := link-va$(VA).ld
+    LINK_SCRIPT := link.ld
 else ifeq  ($(ARCH),x86)
     FULL_ARCH := x86
 	CXX := i686-elf-gcc

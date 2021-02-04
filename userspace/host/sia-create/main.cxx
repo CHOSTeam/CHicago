@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:13 BRT
- * Last edited on January 29 of 2021, at 22:18 BRT */
+ * Last edited on February 04 of 2021, at 17:41 BRT */
 
 #include <cstring>
 #include <iostream>
@@ -42,8 +42,6 @@ int main(int argc, char **argv) {
                  << "Said flags are architecture specific. Here is a little list of kernel arch flags:" << endl;
             cout << "    x86: 0x01 (SIA_X86, indicates that this is a x86 image)." << endl
                  << "    arm64: 0x02 (SIA_ARM64, indicates that this is an arm64 image)." << endl
-                 << "           0x08 (SIA_ARM64_39_BITS, indicates that this image is for 39-bits VA)." << endl
-                 << "           0x10 (SIA_ARM64_48_BITS, indicates that this image is for 48-bits VA)." << endl
                  << "    amd64: 0x04 (SIA_AMD64, indicates that this is an amd64 image)." << endl
                  << "           0x08 (SIA_AMD64_48_BITS, indicate that this image is for 48-bits VA)." << endl
                  << "           0x10 (SIA_AMD64_57_BITS, indicate that this image is for 57-bits VA)." << endl

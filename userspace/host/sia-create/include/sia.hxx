@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:20 BRT
- * Last edited on January 29 of 2021, at 12:00 BRT */
+ * Last edited on February 04 of 2021, at 17:41 BRT */
 
 #pragma once
 
@@ -18,8 +18,6 @@
 #define SIA_X86 0x01
 
 #define SIA_ARM64 0x02
-#define SIA_ARM64_39_BITS 0x08
-#define SIA_ARM64_48_BITS 0x10
 
 #define SIA_AMD64 0x04
 #define SIA_AMD64_48_BITS 0x08
