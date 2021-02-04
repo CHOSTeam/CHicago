@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 01 of 2021, at 15:13 BRT
-# Last edited on January 31 of 2021, at 17:19 BRT
+# Last edited on February 04 of 2021, at 18:22 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are (and ROOT_DIR were the boot project is).
@@ -12,7 +12,7 @@ ifeq ($(ARCH),arm64)
 	DEFS := -DELF_MACHINE=0xB7
 else ifeq ($(ARCH),x86)
 	CC := i686-w64-mingw32-gcc
-	LDFLAGS := -machine:x86
+	LDFLAGS := -machine:x86 -safeseh:no
 	DEFS := -DELF_MACHINE=0x03
 else ifeq ($(ARCH),amd64)
 	CC := x86_64-w64-mingw32-gcc

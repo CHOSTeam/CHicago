@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 12:46 BRT
- * Last edited on February 04 of 2021 at 17:42 BRT */
+ * Last edited on February 04 of 2021 at 18:02 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -23,7 +23,7 @@ static UInt64 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Type) {
     }
 }
 
-static EfiStatus MmuWalkLevel(UInt64 *Level, CHMapping **List, EfiVirtualAddress Virtual, UInt8 Shift, UIntN *Out) {
+static EfiStatus MmuWalkLevel(UInt64 *Level, CHMapping **List, EfiVirtualAddress Virtual, UInt8 Shift, UInt64 *Out) {
     UInt64 tbl = Level[(Virtual >> Shift) & 0x1FF];
 
     if (!(tbl & MMU_PRESENT)) {
@@ -74,7 +74,7 @@ static EfiStatus MmuMap(UInt64 **PageDir, CHMapping **List, CHMapping *Entry) {
 
     /* Skip/alloc the first level, as we're not going to handle checking if we support 512GB pages (yet). */
 
-s:  level = (UIntN)PageDir[high];
+s:  level = (UInt64)PageDir[high];
 
     if (EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 39, &level)))) {
         return status;
