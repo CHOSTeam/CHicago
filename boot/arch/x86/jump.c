@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 31 of 2021, at 13:45 BRT
- * Last edited on February 05 of 2021 at 11:39 BRT */
+ * Last edited on February 05 of 2021 at 12:08 BRT */
 
 #include <arch.h>
 #include <stddef.h>
@@ -11,7 +11,7 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
         goto e;
     }
 
-    /* Initialize the FPU/SSE support */
+    /* Initialize the FPU/SSE support. */
 
     UIntN cr0, cr4;
     UInt16 cw0 = 0x37E, cw1 = 0x37A;

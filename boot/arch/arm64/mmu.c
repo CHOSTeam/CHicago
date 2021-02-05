@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 12:46 BRT
- * Last edited on February 04 of 2021 at 18:02 BRT */
+ * Last edited on February 05 of 2021 at 12:39 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -35,17 +35,16 @@ static EfiStatus MmuWalkLevel(UInt64 *Level, CHMapping **List, EfiVirtualAddress
             return EFI_OUT_OF_RESOURCES;
         }
     
-        EfiZeroMemory((Void*)addr, 0x1000);
-        
+        EfiZeroMemory((Void*)addr, 0x1000);        
         Level[(Virtual >> Shift) & 0x1FF] = addr | MMU_PRESENT | MMU_TABLE;
-        tbl = Level[(Virtual >> Shift) & 0x1FF];
+        *Out = Level[(Virtual >> Shift) & 0x1FF] & ~0xFFF;
     } else if (!(tbl & MMU_TABLE)) {
         EfiDrawString("The MMU paging structures got corrupted during the initialization process.",
                       5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         return EFI_UNSUPPORTED;
+    } else {
+        *Out = tbl & ~0xFFF;
     }
-
-    *Out = tbl & ~0xFFF;
 
     return EFI_SUCCESS;
 }
@@ -72,36 +71,13 @@ static EfiStatus MmuMap(UInt64 **PageDir, CHMapping **List, CHMapping *Entry) {
     EfiStatus status;
     UIntN start = 0, size = Entry->Size, level;
 
-    /* Skip/alloc the first level, as we're not going to handle checking if we support 512GB pages (yet). */
+    /* Skip/alloc the first two level, as we're not going to map using 512GB and 1GB pages (yet). */
 
 s:  level = (UInt64)PageDir[high];
 
     if (EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 39, &level)))) {
         return status;
-    }
-
-    /* We're going for now assume that 1GiB pages ARE supported, so let's first map things using said huge pages. */
-
-    while (!((Entry->Virtual + start) & 0x3FFFFFFF) && size >= 0x40000000) {
-        ((UInt64*)level)[((Entry->Virtual + start) >> 30) & 0x1FF] = MmuMakeEntry(Entry->Physical + start,
-                                                                                  Entry->Type);
-        start += 0x40000000;
-        size -= 0x40000000;
-
-        /* Check if we haven't exceeded the limit of this entry. */
-
-        if ((((Entry->Virtual + start) >> 39) & 0x1FF) != (((Entry->Virtual + start - 0x40000000) >> 39) & 0x1FF)) {
-            goto s;
-        }
-    }
-
-    if (!size) {
-        return EFI_SUCCESS;
-    }
-
-    /* We still have pages left to map, let's walk through into the next/first level. */
-
-    if (EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 30, &level)))) {
+    } else if (EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 30, &level)))) {
         return status;
     }
 
@@ -160,7 +136,7 @@ EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
         return EFI_OUT_OF_RESOURCES;
     }
 
-    UInt64 **pdp = *Out = EfiAllocatePool(sizeof(UInt64*) * 2);
+    UInt64 **pd = *Out = EfiAllocatePool(sizeof(UInt64*) * 2);
 
     if (Out == Null) {
         EfiDrawString("The system is out of memory (couldn't allocate the page directory pointer).", 5,
@@ -168,32 +144,31 @@ EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
         return EFI_OUT_OF_RESOURCES;
     }
     
-    pdp[0] = (UInt64*)addr;
-    pdp[1] = (UInt64*)(addr + 0x1000);
+    pd[0] = (UInt64*)addr;
+    pd[1] = (UInt64*)(addr + 0x1000);
 
     /* We need to clean the pointers, else, we may have some non zeroed memory that may make the mapping process fail
      * or crash. */
 
-    EfiZeroMemory(pdp[0], 0x1000);
-    EfiZeroMemory(pdp[1], 0x1000);
+    EfiZeroMemory(pd[0], 0x2000);
 
     CHMapping sent = { ((UIntN)ArchJumpIntoCHicago) & ~0xFFF, ((UIntN)ArchJumpIntoCHicago) & ~0xFFF, 0x1000,
                        CH_MEM_KCODE, Null, Null };
 
-    if (EFI_ERROR((status = MmuMap(pdp, List, &sent)))) {
+    if (EFI_ERROR((status = MmuMap(pd, List, &sent)))) {
         return status;
     }
 
     for (CHMapping *ent = *List; ent != Null; ent = ent->Next) {
-        if (EFI_ERROR((status = MmuMap(pdp, List, ent)))) {
+        if (EFI_ERROR((status = MmuMap(pd, List, ent)))) {
             return status;
         }
     }
 
     /* Create the recursive entries. */
 
-    pdp[1][510] = (addr & ~0xFFF) | MMU_PRESENT | MMU_TABLE;
-    pdp[1][511] = ((addr + 0x1000) & ~0xFFF) | MMU_PRESENT | MMU_TABLE;
+    pd[1][510] = addr | MMU_PRESENT | MMU_TABLE;
+    pd[1][511] = (addr + 0x1000) | MMU_PRESENT | MMU_TABLE;
 
     return EFI_SUCCESS;
 }
