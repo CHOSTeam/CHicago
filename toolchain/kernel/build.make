@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 04 of 2021, at 17:40 BRT
+# Last edited on February 05 of 2021, at 15:18 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are (and ROOT_DIR were the kernel project is).
@@ -20,16 +20,12 @@ else ifeq  ($(ARCH),x86)
 	CXX := i686-elf-gcc
 	LINK_SCRIPT := link.ld
 else ifeq ($(ARCH),amd64)
-    VA ?= 48
     FULL_ARCH := amd64
-    OUT := $(OUT)-va$(VA)
 
 	CXX := x86_64-elf-gcc
-
 	CXXFLAGS := -mcmodel=large -mno-red-zone
-	DEFS := -DVA=$(VA)
 
-    LINK_SCRIPT := link-va$(VA).ld
+    LINK_SCRIPT := link.ld
 else
 	$(error Invalid/unsupported architecture $(ARCH))
 endif

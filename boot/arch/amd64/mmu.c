@@ -1,16 +1,14 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 28 of 2021, at 09:16 BRT
- * Last edited on February 05 05 of 2021 at 12:46 BRT */
+ * Last edited on February 05 of 2021 at 15:44 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
 #include <efi/lib.h>
 
-static Boolean MmuSupports57 = False;
-
 static UInt64 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Type) {
-    return Physical | MMU_PRESENT | (Type == CH_MEM_KCODE ? 0 : MMU_NO_EXEC);
+    return Physical | MMU_PRESENT | MMU_WRITE | (Type == CH_MEM_KCODE ? 0 : MMU_NO_EXEC);
 }
 
 static EfiStatus MmuWalkLevel(UInt64 *Level, CHMapping **List, EfiVirtualAddress Virtual, UInt8 Shift, UInt64 *Out) {
@@ -48,13 +46,11 @@ static EfiStatus MmuMap(UInt64 *PageDir, CHMapping **List, CHMapping *Entry) {
     EfiStatus status;
     UIntN start = 0, size = Entry->Size, level;
 
-    /* Skip out the first levels (256TB, 512GB and 1GB on PML5, and just the 512GB and 1GB ones on PML4). */
+    /* Skip out the first levels (512GB and 1GB), as we don't support mapping huge pages with them */
 
 s:  level = (UInt64)PageDir;
 
-    if (MmuSupports57 && EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 48, &level)))) {
-        return status;
-    } else if (EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 39, &level)))) {
+    if (EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 39, &level)))) {
         return status;
     } else if (EFI_ERROR((status = MmuWalkLevel((UInt64*)level, List, Entry->Virtual + start, 30, &level)))) {
         return status;
@@ -92,19 +88,13 @@ s:  level = (UInt64)PageDir;
     return EFI_SUCCESS;
 }
 
-EfiStatus ArchInitCHicagoMmu(UInt16 Features, CHMapping **List, Void **Out) {
+EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
     if (List == Null || *List == Null || Out == Null) {
         return EFI_INVALID_PARAMETER;
     }
 
-    /* First, save if we support/should use PML5/57-bits virtual addressing. */
 
-    if (Features & SIA_AMD64_57_BITS) {
-        MmuSupports57 = True;
-    }
-
-    /* Allocate the PML4/PML5 (bot hare the same, the part that changes is how many levels we have to skip on
-     * MmuMap). */
+    /* Allocate the PML4 pointer. */
 
     EfiStatus status;
     EfiPhysicalAddress addr;

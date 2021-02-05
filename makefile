@@ -1,18 +1,11 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 28 of 2020, at 16:05 BRT
-# Last edited on February 04 of 2021, at 17:39 BRT
+# Last edited on February 05 of 2021, at 15:17 BRT
 
 ARCH ?= arm64
 DEBUG ?= false
 VERBOSE ?= false
-
-# Only handle the ARCHs with special flags here (like arm64 and amd64, as they have the VA flag). Proper supported arch
-# support should be handled inside each module.
-
-ifeq ($(ARCH),amd64)
-	VA ?= 48
-endif
 
 ifneq ($(VERBOSE),true)
 NOECHO := @
@@ -23,12 +16,12 @@ endif
 build:
 	$(NOECHO)make -C toolchain ARCH=$(ARCH) VERBOSE=$(VERBOSE) build
 	$(NOECHO)make -C boot ARCH=$(ARCH) DEBUG=$(DEBUG) VERBOSE=$(VERBOSE) build
-	$(NOECHO)make -C kernel VA=$(VA) ARCH=$(ARCH) DEBUG=$(DEBUG) VERBOSE=$(VERBOSE) build
+	$(NOECHO)make -C kernel ARCH=$(ARCH) DEBUG=$(DEBUG) VERBOSE=$(VERBOSE) build
 	$(NOECHO)make -C userspace ARCH=$(ARCH) DEBUG=$(DEBUG) VERBOSE=$(VERBOSE) build
 
 clean:
 	$(NOECHO)make -C boot ARCH=$(ARCH) VERBOSE=$(VERBOSE) clean
-	$(NOECHO)make -C kernel VA=$(VA) ARCH=$(ARCH) VERBOSE=$(VERBOSE) clean
+	$(NOECHO)make -C kernel ARCH=$(ARCH) VERBOSE=$(VERBOSE) clean
 	$(NOECHO)make -C userspace ARCH=$(ARCH) VERBOSE=$(VERBOSE) clean
 
 clean-all:

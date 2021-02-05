@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:20 BRT
- * Last edited on February 04 of 2021, at 17:41 BRT */
+ * Last edited on February 05 of 2021, at 15:12 BRT */
 
 #pragma once
 
@@ -13,17 +13,7 @@
 
 #define SIA_FIXED 0x01
 
-/* Arch-specific file flags for the kernel. */
-
-#define SIA_X86 0x01
-
-#define SIA_ARM64 0x02
-
-#define SIA_AMD64 0x04
-#define SIA_AMD64_48_BITS 0x08
-#define SIA_AMD64_57_BITS 0x10
-
-/* And file flags for normal files/directories. */
+/* File flags for normal files/directories. */
 
 #define SIA_DIR 0x01
 #define SIA_READ 0x02
