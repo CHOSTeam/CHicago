@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 22:53 BRT
- * Last edited on February 04 of 2021 at 18:20 BRT */
+ * Last edited on February 05 of 2021 at 11:38 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -48,7 +48,7 @@ s:  level = (UIntN)PageDir;
 
         EfiZeroMemory((Void*)addr, 0x1000);
 
-        ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] = addr | MMU_PRESENT;
+        ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] = addr | MMU_PRESENT | MMU_WRITE;
         level = ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] & ~0xFFF;
     } else if (tbl & MMU_HUGE) {
         EfiDrawString("The MMU paging structures got corrupted during the initialization process.",

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 06 of 2021, at 15:31 BRT
- * Last edited on January 30 of 2021 at 11:54 BRT */
+ * Last edited on February 05 of 2021 at 10:52 BRT */
 
 #include <efi/lib.h>
 
@@ -123,8 +123,8 @@ EfiStatus EfiSetupGraphics(UInt8 Red, UInt8 Green, UInt8 Blue) {
     for (UIntN i = 0; i < EfiGop->Mode->MaxMode; i++) {
         /* Only the pixel format needs to be an exact match. */
 
-        if (!EFI_ERROR((status = EfiGop->QueryMode(EfiGop, i, &size, &mode))) && mode->Width * mode->Height > max &&
-            mode->PixelFormat == EfiPixelFormatBGRR8) {
+        if (!EFI_ERROR((status = EfiGop->QueryMode(EfiGop, i, &size, &mode))) && mode->Width <= 1920 &&
+            mode->Height <= 1080 && mode->Width * mode->Height > max && mode->PixelFormat == EfiPixelFormatBGRR8) {
             max = mode->Width * mode->Height;
             maxi = i;
         }

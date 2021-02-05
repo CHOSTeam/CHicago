@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 15 of 2021, at 20:09 BRT
- * Last edited on February 02 of 2021 at 13:17 BRT */
+ * Last edited on February 05 of 2021 at 11:48 BRT */
 
 #include <efi/lib.h>
 
@@ -136,6 +136,11 @@ EfiMemoryDescriptor *EfiGetMemoryMap(UIntN *Count, UIntN *Key, UIntN *Size, UInt
     UIntN size = 0;
     EfiMemoryDescriptor *map = Null;
     EfiStatus status = EfiBS->GetMemoryMap(&size, map, Key, Size, Version);
+
+
+    /* Also, let's overallocate a bit, as allocating the mmap space itself will probably create some more entries. */
+
+    size += *Size * 2;
 
     if (status != EFI_BUFFER_TOO_SMALL) {
         return Null;

@@ -1,11 +1,15 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 04 of 2021 at 15:33 BRT */
+ * Last edited on February 05 of 2021 at 11:42 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
 #include <elf.h>
+
+/* TODO: Is there any way to alloc pages (using AllocatePages) while using a custom memory type (that doesn't break
+ * under older firmwares)? If there is, we can simplify the CHAddMapping function to not use the CHMapping struct
+ * (and also simplify some other parts of the code). */
 
 CHMapping *CHAddMapping(CHMapping *List, EfiVirtualAddress Virtual, UIntN Size, UInt8 Type,
                         EfiPhysicalAddress *Physical, Boolean Allocate) {
@@ -606,6 +610,8 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     if (EFI_ERROR((status = ArchInitCHicagoMmu(feat, &list, &dir)))) {
         return status;
     }
+
+    /* DEBUG */
 
     bi->KernelEnd = end;
     bi->Directory = dir;
