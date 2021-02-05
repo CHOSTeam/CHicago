@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 12:46 BRT
- * Last edited on February 05 of 2021 at 12:39 BRT */
+ * Last edited on February 05 of 2021 at 16:07 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -37,7 +37,7 @@ static EfiStatus MmuWalkLevel(UInt64 *Level, CHMapping **List, EfiVirtualAddress
     
         EfiZeroMemory((Void*)addr, 0x1000);        
         Level[(Virtual >> Shift) & 0x1FF] = addr | MMU_PRESENT | MMU_TABLE;
-        *Out = Level[(Virtual >> Shift) & 0x1FF] & ~0xFFF;
+        *Out = addr;
     } else if (!(tbl & MMU_TABLE)) {
         EfiDrawString("The MMU paging structures got corrupted during the initialization process.",
                       5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);

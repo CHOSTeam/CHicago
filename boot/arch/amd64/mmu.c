@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 28 of 2021, at 09:16 BRT
- * Last edited on February 05 of 2021 at 15:44 BRT */
+ * Last edited on February 05 of 2021 at 17:28 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -26,7 +26,7 @@ static EfiStatus MmuWalkLevel(UInt64 *Level, CHMapping **List, EfiVirtualAddress
 
         EfiZeroMemory((Void*)addr, 0x1000);
         Level[(Virtual >> Shift) & 0x1FF] = addr | MMU_PRESENT | MMU_WRITE;
-        *Out = Level[(Virtual >> Shift) & 0x1FF] & ~0xFFF;
+        *Out = addr;
     } else if (tbl & MMU_HUGE) {
         EfiDrawString("The MMU paging structures got corrupted during the initialization process.",
                       5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
@@ -62,7 +62,7 @@ s:  level = (UInt64)PageDir;
 
     while (!((Entry->Virtual + start) & 0x1FFFFF) && size >= 0x200000) {
         ((UInt64*)level)[((Entry->Virtual + start) >> 21) & 0x1FF] = MmuMakeEntry(Entry->Physical + start,
-                                                                                  Entry->Type);
+                                                                                  Entry->Type) | MMU_HUGE;
         start += 0x200000;
         size -= 0x200000;
 
@@ -76,7 +76,8 @@ s:  level = (UInt64)PageDir;
     }
 
     while (size) {
-        ((UInt64*)level)[((Entry->Virtual + start) >> 12) & 0x1FF] = MmuMakeEntry(Entry->Physical + start, Entry->Type);
+        ((UInt64*)level)[((Entry->Virtual + start) >> 12) & 0x1FF] = MmuMakeEntry(Entry->Physical + start,
+                                                                                  Entry->Type);
         start += 0x1000;
         size -= 0x1000;
 
@@ -92,7 +93,6 @@ EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
     if (List == Null || *List == Null || Out == Null) {
         return EFI_INVALID_PARAMETER;
     }
-
 
     /* Allocate the PML4 pointer. */
 

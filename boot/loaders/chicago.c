@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 05 of 2021 at 11:42 BRT */
+ * Last edited on February 05 of 2021 at 16:04 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -610,8 +610,6 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     if (EFI_ERROR((status = ArchInitCHicagoMmu(feat, &list, &dir)))) {
         return status;
     }
-
-    /* DEBUG */
 
     bi->KernelEnd = end;
     bi->Directory = dir;
