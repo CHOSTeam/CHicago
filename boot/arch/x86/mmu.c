@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 22:53 BRT
- * Last edited on February 05 of 2021 at 12:34 BRT */
+ * Last edited on February 06 of 2021 at 12:11 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -21,7 +21,7 @@ static EfiStatus MmuMap(UInt32 *PageDir, CHMapping **List, CHMapping *Entry) {
 
 s:  level = (UIntN)PageDir;
 
-    while (!((Entry->Virtual + start) & 0x3FFFFF) && size >= 0x400000) {
+    while (!(((Entry->Virtual + start) & 0x3FFFFF) || ((Entry->Physical + start) & 0x3FFFFF)) && size >= 0x400000) {
         ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] = (Entry->Physical + start) | MMU_PRESENT
                                                                                                | MMU_WRITE
                                                                                                | MMU_HUGE;
@@ -35,7 +35,7 @@ s:  level = (UIntN)PageDir;
 
     /* We still have memory left to map, let's use 4KiB pages. */
 
-    UInt64 tbl = ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF];
+    UInt32 tbl = ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF];
 
     if (!(tbl & MMU_PRESENT)) {
         /* Same things that we do on MmuWalkLevel (on amd64/arm64), but here we only have to do it for one level. */
