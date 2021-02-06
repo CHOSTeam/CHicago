@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 31 of 2021, at 13:45 BRT
- * Last edited on February 06 of 2021 at 10:40 BRT */
+ * Last edited on February 06 of 2021 at 11:15 BRT */
 
 #include <arch.h>
 #include <stddef.h>
@@ -50,6 +50,7 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
                  "mov %%cr4, %%eax; or $0x10, %%eax; mov %%eax, %%cr4\n"
                  "mov %%cr0, %%eax; or $0x80010001, %%eax; mov %%eax, %%cr0\n"
                  "mov %%edx, %%esp\n"
+                 "xor %%ebp, %%ebp\n"
                  "push %%ecx\n"
                  "call *%%ebx" :: "r"(Entry), "r"(Arg), "r"(sp), "r"(BootInfo->Directory) : "%ebx", "%ecx", "%edx");
 #else
@@ -61,6 +62,7 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
                  "mov %2, %%rsi\n"
                  "mov %3, %%cr3\n"
                  "mov %%rsi, %%rsp\n"
+                 "xor %%rbp, %%rbp\n"
                  "call *%%rbx" :: "r"(Entry), "r"(Arg), "r"(sp), "r"(BootInfo->Directory) : "%rbx", "%rdi", "%rsi");
 #endif
 
