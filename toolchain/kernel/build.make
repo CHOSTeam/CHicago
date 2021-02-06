@@ -1,10 +1,10 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 06 of 2021, at 12:55 BRT
+# Last edited on February 06 of 2021, at 15:27 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
-# where we are (and ROOT_DIR were the kernel project is).
+# where we are, etc).
 
 ifeq ($(ARCH),arm64)
     FULL_ARCH := arm64
@@ -26,7 +26,7 @@ endif
 
 CXXFLAGS += -Iinclude -Iarch/$(ARCH)/include -ffreestanding -fno-rtti -fno-exceptions -fno-use-cxa-atexit \
             -fno-stack-protector -fno-omit-frame-pointer -std=c++2a
-LDFLAGS += -nostdlib -T$(ROOT_DIR)/arch/$(ARCH)/$(LINK_SCRIPT) -L$(ROOT_DIR)
+LDFLAGS += -nostdlib -Tarch/$(ARCH)/$(LINK_SCRIPT) -L.
 PRE_LIBS := $(shell $(CXX) -print-file-name=crti.o) $(shell $(CXX) -print-file-name=crtbegin.o) $(PRE_LIBS)
 LIBS += $(shell $(CXX) -print-file-name=crtend.o) $(shell $(CXX) -print-file-name=crtn.o) -lgcc
 DEFS += -DARCH=\"$(ARCH)\"
@@ -50,7 +50,7 @@ clean:
 clean-all:
 	$(NOECHO)rm -rf build
 
-$(OUT): $(OBJECTS) makefile $(TOOLCHAIN_DIR)/build.make
+$(OUT): $(OBJECTS) arch/$(ARCH)/$(LINK_SCRIPT) common.ld makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo LD: $@
 	$(NOECHO)$(CXX) $(LDFLAGS) -o $@ $(PRE_LIBS) $(OBJECTS) $(LIBS)

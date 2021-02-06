@@ -1,14 +1,15 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 28 of 2021, at 09:16 BRT
- * Last edited on February 05 of 2021 at 21:16 BRT */
+ * Last edited on February 06 of 2021 at 15:48 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
 #include <efi/lib.h>
 
-static UInt64 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Type) {
-    return Physical | MMU_PRESENT | MMU_WRITE | (Type == CH_MEM_KCODE ? 0 : MMU_NO_EXEC);
+static inline UInt64 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Type) {
+    return Physical | MMU_PRESENT | ((Type != CH_MEM_KCODE && Type != CH_MEM_KDATA_RO) ? MMU_WRITE : 0) |
+                                    (Type == CH_MEM_KCODE ? 0 : MMU_NO_EXEC);
 }
 
 static EfiStatus MmuWalkLevel(UInt64 *Level, CHMapping **List, EfiVirtualAddress Virtual, UInt8 Shift, UInt64 *Out) {

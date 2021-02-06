@@ -1,11 +1,15 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 22:53 BRT
- * Last edited on February 06 of 2021 at 12:11 BRT */
+ * Last edited on February 06 of 2021 at 15:39 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
 #include <efi/lib.h>
+
+static inline UInt32 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Type) {
+    return Physical | MMU_PRESENT | ((Type != CH_MEM_KCODE && Type != CH_MEM_KDATA_RO) ? MMU_WRITE : 0);
+}
 
 static EfiStatus MmuMap(UInt32 *PageDir, CHMapping **List, CHMapping *Entry) {
     if (Entry->Type == CH_MEM_MMU) {
@@ -22,9 +26,8 @@ static EfiStatus MmuMap(UInt32 *PageDir, CHMapping **List, CHMapping *Entry) {
 s:  level = (UIntN)PageDir;
 
     while (!(((Entry->Virtual + start) & 0x3FFFFF) || ((Entry->Physical + start) & 0x3FFFFF)) && size >= 0x400000) {
-        ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] = (Entry->Physical + start) | MMU_PRESENT
-                                                                                               | MMU_WRITE
-                                                                                               | MMU_HUGE;
+        ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] = MmuMakeEntry(Entry->Physical + start,
+                                                                                  Entry->Type) | MMU_HUGE;
         start += 0x400000;
         size -= 0x400000;
     }
@@ -59,8 +62,8 @@ s:  level = (UIntN)PageDir;
     }
 
     while (size) {
-        ((UInt32*)level)[((Entry->Virtual + start) >> 12) & 0x3FF] = (Entry->Physical + start) | MMU_PRESENT |
-                                                                                                 MMU_WRITE;
+        ((UInt32*)level)[((Entry->Virtual + start) >> 12) & 0x3FF] = MmuMakeEntry(Entry->Physical + start,
+                                                                                  Entry->Type);
         start += 0x1000;
         size -= 0x1000;
 

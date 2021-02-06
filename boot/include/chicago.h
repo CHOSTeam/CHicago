@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on February 05 of 2021 at 20:37 BRT */
+ * Last edited on February 06 of 2021 at 15:33 BRT */
 
 #pragma once
 
@@ -18,10 +18,11 @@
 
 #define CH_MEM_KCODE 0x00
 #define CH_MEM_KDATA 0x01
-#define CH_MEM_MMU 0x02
-#define CH_MEM_DEV 0x03
-#define CH_MEM_RES 0x04
-#define CH_MEM_FREE 0x05
+#define CH_MEM_KDATA_RO 0x02
+#define CH_MEM_MMU 0x03
+#define CH_MEM_DEV 0x04
+#define CH_MEM_RES 0x05
+#define CH_MEM_FREE 0x06
 
 typedef struct _CHMapping CHMapping;
 

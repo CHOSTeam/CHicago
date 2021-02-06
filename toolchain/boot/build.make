@@ -1,10 +1,10 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 01 of 2021, at 15:13 BRT
-# Last edited on February 04 of 2021, at 18:22 BRT
+# Last edited on February 06 of 2021, at 15:29 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
-# where we are (and ROOT_DIR were the boot project is).
+# where we are, etc).
 
 ifeq ($(ARCH),arm64)
 	CC := aarch64-w64-mingw32-gcc

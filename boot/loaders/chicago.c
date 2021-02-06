@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 05 of 2021 at 20:38 BRT */
+ * Last edited on February 06 of 2021 at 15:36 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -369,7 +369,9 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
         /* The size in memory and size in the file may be different, so let's clean it first, and load what we need
          * into memory after that. */
 
-        if ((*List = CHAddMapping(*List, phdr->VirtAddress, size, (phdr->Flags & 0x01) ? CH_MEM_KCODE : CH_MEM_KDATA,
+        if ((*List = CHAddMapping(*List, phdr->VirtAddress, size, (phdr->Flags & 0x01) ? CH_MEM_KCODE :
+                                                                  ((phdr->Flags & 0x02) ? CH_MEM_KDATA :
+                                                                                          CH_MEM_KDATA_RO),
                                   &addr, True)) == Null || !addr) {
             EfiFreePool(phdrs);
             return status;
