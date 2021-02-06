@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 06 of 2021 at 15:36 BRT */
+ * Last edited on February 06 of 2021 at 17:27 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -574,11 +574,13 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     
     UIntN regv = (UIntN)end;
 
+    asize = (maxaddr - minaddr) >> 12;
 #ifdef _WIN64
-    asize = (((maxaddr - minaddr) >> 22) / 0x90 + 0xFFF) & ~0xFFF;
+    asize += ((maxaddr - minaddr) >> 22) * 0x90;
 #else
-    asize = (((maxaddr - minaddr) >> 22) / 0x88 + 0xFFF) & ~0xFFF;
+    asize += ((maxaddr - minaddr) >> 22) * 0x88;
 #endif
+    asize = (asize + 0xFFF) & ~0xFFF;
 
     if ((list = CHAddMapping(list, end, asize, CH_MEM_KDATA, &addr, True)) == Null || !addr) {
         EfiFreePool(map);
@@ -657,7 +659,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
         if (type != 0xFF) {
             mmap[mmapc].Base = base;
-            mmap[mmapc].Size = size;
+            mmap[mmapc].Count = size >> 12;
             mmap[mmapc++].Type = type;
             continue;
         } else if (desc->Type != EfiLoaderCode && desc->Type != EfiLoaderData) {
@@ -672,7 +674,7 @@ s:      ;CHMapping *ent = CHGetMapping(list, base, base + size);
             /* Doesn't match, just add it all as avaliable. */
 
             mmap[mmapc].Base = base;
-            mmap[mmapc].Size = size;
+            mmap[mmapc].Count = size >> 12;
             mmap[mmapc++].Type = CH_MEM_FREE;
 
             continue;
@@ -680,7 +682,7 @@ s:      ;CHMapping *ent = CHGetMapping(list, base, base + size);
             /* The region base perfectly matches with the base of the mmap entry! */
 
             mmap[mmapc].Base = base;
-            mmap[mmapc].Size = size;
+            mmap[mmapc].Count = size >> 12;
             mmap[mmapc++].Type = ent->Type;
 
             continue;
@@ -697,7 +699,7 @@ s:      ;CHMapping *ent = CHGetMapping(list, base, base + size);
 
             UIntN add = (size <= ent->Size - (base - ent->Physical)) ? size : ent->Size - (base - ent->Physical);
             
-            mmap[mmapc - 1].Size += add;
+            mmap[mmapc - 1].Count += add >> 12;
             size -= add;
             base += add;
 
@@ -711,7 +713,7 @@ s:      ;CHMapping *ent = CHGetMapping(list, base, base + size);
         /* The region starts after, let's split it into two. */
 
         mmap[mmapc].Base = base;
-        mmap[mmapc].Size = ent->Physical - base;
+        mmap[mmapc].Count = (ent->Physical - base) >> 12;
         mmap[mmapc].Type = CH_MEM_FREE;
         size -= ent->Physical - base;
         base = ent->Physical;

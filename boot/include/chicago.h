@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on February 06 of 2021 at 15:33 BRT */
+ * Last edited on February 06 of 2021 at 17:17 BRT */
 
 #pragma once
 
@@ -48,7 +48,7 @@ typedef struct __attribute__((packed)) {
 } SiaData;
 
 typedef struct __attribute__((packed)) {
-    UIntN Base, Size;
+    UIntN Base, Count;
     UInt8 Type;
 } CHBootInfoMemMap;
 
