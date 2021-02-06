@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on December 30 of 2020, at 15:07 BRT
-# Last edited on January 22 of 2021, at 15:08 BRT
+# Last edited on February 06 of 2021, at 10:58 BRT
 
 VERBOSE ?= false
 
@@ -56,4 +56,4 @@ endif
 endif
 
 clean:
-	$(NOECHO)ls -Q | grep -v makefile | xargs rm -rf
+	$(NOECHO)rm -rf $(OUT_DIR)

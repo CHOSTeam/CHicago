@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on December 30 of 2020, at 15:07 BRT
-# Last edited on January 22 of 2021, at 15:10 BRT
+# Last edited on February 06 of 2021, at 10:58 BRT
 
 VERBOSE ?= false
 
@@ -25,20 +25,24 @@ endif
 
 build: prepare
 ifeq (,$(wildcard $(OUT_DIR)/i686-elf))
-	$(NOECHO)echo "Building Binutils (i686-elf)"
+	$(NOECHO)echo "Building Binutils"
 	$(NOECHO)rm -rf $(SOURCE_DIR)/binutils/build && mkdir $(SOURCE_DIR)/binutils/build
 	$(NOECHO)cd $(SOURCE_DIR)/binutils/build && \
 			 ../configure --target=i686-elf --prefix=$(OUT_DIR) --with-sysroot --disable-multilib --disable-nls \
 			 			  --disable-werror 1>/dev/null 2>&1
 	$(NOECHO)make -C $(SOURCE_DIR)/binutils/build -j$(NPROC) 1>/dev/null 2>&1
 	$(NOECHO)make -C $(SOURCE_DIR)/binutils/build -j$(NPROC) install 1>/dev/null 2>&1
-	$(NOECHO)echo "Building GCC (i686-elf)"
+	$(NOECHO)echo "Building GCC"
 	$(NOECHO)rm -rf $(SOURCE_DIR)/gcc/build && mkdir $(SOURCE_DIR)/gcc/build
 	$(NOECHO)cd $(SOURCE_DIR)/gcc/build && \
 			 ../configure --target=i686-elf --prefix=$(OUT_DIR) --enable-languages=c,c++ --disable-multilib \
 						  --without-headers --disable-nls --disable-werror 1>/dev/null 2>&1
 	$(NOECHO)make -C $(SOURCE_DIR)/gcc/build -j$(NPROC) all-gcc all-target-libgcc 1>/dev/null 2>&1
 	$(NOECHO)make -C $(SOURCE_DIR)/gcc/build -j$(NPROC) install-gcc install-target-libgcc 1>/dev/null 2>&1
+	$(NOECHO)$(OUT_DIR)/bin/i686-elf-gcc -c -o \
+			 $(dirname `$(OUT_DIR)/bin/i686-elf-gcc -print-libgcc-file-name`)/crti.o crti.S
+	$(NOECHO)$(OUT_DIR)/bin/i686-elf-gcc -c -o \
+				 $(dirname `$(OUT_DIR)/bin/i686-elf-gcc -print-libgcc-file-name`)/crtn.o crtn.S
 endif
 
 prepare:
@@ -56,4 +60,4 @@ endif
 endif
 
 clean:
-	$(NOECHO)ls -Q | grep -v makefile | xargs rm -rf
+	$(NOECHO)rm -rf $(OUT_DIR)

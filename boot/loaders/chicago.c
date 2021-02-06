@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 05 of 2021 at 16:04 BRT */
+ * Last edited on February 05 of 2021 at 20:38 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -188,7 +188,7 @@ static CHMapping *CHGetMapping(CHMapping *List, UIntN Start, UIntN End) {
     return List;
 }
 
-static EfiStatus SiaCheck(Char8 *Buffer, UIntN Size) {
+static EfiStatus SiaCheck(UInt8 *Buffer, UIntN Size) {
     /* SIA (System Image Archive) is a TAR-like file format, used here on the osldr as the kernel/initrd container. It
      * can contain kernel images for multiple "variants" of the same architecture (for example, one for arm64 with 48-bit
      * VA support, and one for arm64 with 39-bit VA support), and also multiple root images/initrds. */
@@ -234,7 +234,7 @@ static EfiStatus SiaCheck(Char8 *Buffer, UIntN Size) {
     return EFI_SUCCESS;
 }
 
-static EfiStatus SiaGoToOffset(Char8 *SourceAddress, UIntN SourceSize, SiaFile *File, UInt64 Offset, UInt64 *Last) {
+static EfiStatus SiaGoToOffset(UInt8 *SourceAddress, UIntN SourceSize, SiaFile *File, UInt64 Offset, UInt64 *Last) {
     /* By default, init the output argument (Last) with the offset of the start of the file. */
 
     SiaData *data = Null;
@@ -256,8 +256,8 @@ static EfiStatus SiaGoToOffset(Char8 *SourceAddress, UIntN SourceSize, SiaFile *
     return EFI_SUCCESS;
 }
 
-static EfiStatus SiaReadFile(Char8 *SourceAddress, UIntN SourceSize, SiaFile *File, UInt64 Offset, UInt64 Length,
-                             Char8 *OutAddress) {
+static EfiStatus SiaReadFile(UInt8 *SourceAddress, UIntN SourceSize, SiaFile *File, UInt64 Offset, UInt64 Length,
+                             UInt8 *OutAddress) {
     SiaData *data;
     UInt64 last = 0, cur = 0, skip = Offset % sizeof(data->Data);
 
@@ -296,7 +296,7 @@ static EfiStatus SiaReadFile(Char8 *SourceAddress, UIntN SourceSize, SiaFile *Fi
 	return EFI_SUCCESS;
 }
 
-static EfiStatus SiaLoadKernel(Char8 *Buffer, UIntN Size, UInt16 *Features, UIntN *Entry, UIntN *Start, UIntN *End,
+static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UIntN *Entry, UIntN *Start, UIntN *End,
                                CHMapping **List) {
     /* First, check if the SIA file is valid and not corrupted. */
 
@@ -320,7 +320,7 @@ static EfiStatus SiaLoadKernel(Char8 *Buffer, UIntN Size, UInt16 *Features, UInt
 
     ElfHeader ehdr;
 
-    if (EFI_ERROR((status = SiaReadFile(Buffer, Size, file, 0, sizeof(ElfHeader), (Char8*)&ehdr)))) {
+    if (EFI_ERROR((status = SiaReadFile(Buffer, Size, file, 0, sizeof(ElfHeader), (UInt8*)&ehdr)))) {
         EfiDrawString("Couldn't read the kernel ELF header.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         return status;
     } else if (ehdr.Ident[0] != 0x7F || ehdr.Ident[1] != 'E' || ehdr.Ident[2] != 'L' || ehdr.Ident[3] != 'F') {
@@ -347,7 +347,7 @@ static EfiStatus SiaLoadKernel(Char8 *Buffer, UIntN Size, UInt16 *Features, UInt
                       EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         return EFI_OUT_OF_RESOURCES;
     } else if ((EFI_ERROR((status = SiaReadFile(Buffer, Size, file, ehdr.ProgHeaderOffset,
-                                                ehdr.ProgHeaderCount * sizeof(ElfProgHeader), (Char8*)phdrs))))) {
+                                                ehdr.ProgHeaderCount * sizeof(ElfProgHeader), (UInt8*)phdrs))))) {
         EfiDrawString("Couldn't read the kernel ELF program headers.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         EfiFreePool(phdrs);
         return status;
@@ -386,7 +386,7 @@ static EfiStatus SiaLoadKernel(Char8 *Buffer, UIntN Size, UInt16 *Features, UInt
         EfiZeroMemory((Void*)addr, size);
 
         if (phdr->FileSize && EFI_ERROR((status = SiaReadFile(Buffer, Size, file, phdr->Offset, phdr->FileSize,
-                                                              (Char8*)addr)))) {
+                                                              (UInt8*)addr)))) {
             EfiDrawString("Couldn't read one of the kernel sections.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
             EfiFreePool(phdrs);
             return status;
@@ -412,7 +412,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     /* Let's read in the SIA file (in whatever path it is), validate it, and load the best fit kernel into memory
      * (everything but loading in the file into memory is done by SiaLoadKernel). */
 
-    Char8 *buf;
+    UInt8 *buf;
     UInt16 feat;
     EfiFile *file;
     CHMapping *list = Null;
@@ -468,7 +468,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     /* Relloc the boot SIA image file contents (to a place that the kernel will be able to access post
      * ExitBootServices). */
 
-    Char8 *nbuf, *nbufv = (Char8*)end;
+    UInt8 *nbuf, *nbufv = (UInt8*)end;
 
     asize = (size + 0xFFF) & ~0xFFF;
 
@@ -477,7 +477,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
         return EFI_OUT_OF_RESOURCES;
     }
 
-    nbuf = (Char8*)addr;
+    nbuf = (UInt8*)addr;
     end += asize;
 
     /* Zero the memory as we probably over allocated (pretty hard to not happen). */

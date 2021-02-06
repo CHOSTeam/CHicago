@@ -1,30 +1,24 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 05 of 2021, at 15:18 BRT
+# Last edited on February 06 of 2021, at 11:01 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are (and ROOT_DIR were the kernel project is).
 
 ifeq ($(ARCH),arm64)
     FULL_ARCH := arm64
-
     CXX := aarch64-elf-gcc
-
-    PRE_LIBS := $(shell $(CXX) -print-file-name=crti.o)
-    LIBS := $(shell $(CXX) -print-file-name=crtn.o)
-
     LINK_SCRIPT := link.ld
 else ifeq  ($(ARCH),x86)
     FULL_ARCH := x86
 	CXX := i686-elf-gcc
+	CXXFLAGS := -msse2 -mfpmath=sse
 	LINK_SCRIPT := link.ld
 else ifeq ($(ARCH),amd64)
     FULL_ARCH := amd64
-
 	CXX := x86_64-elf-gcc
-	CXXFLAGS := -mcmodel=large -mno-red-zone
-
+	CXXFLAGS := -mcmodel=large -mno-red-zone -msse2 -mfpmath=sse
     LINK_SCRIPT := link.ld
 else
 	$(error Invalid/unsupported architecture $(ARCH))
@@ -33,8 +27,8 @@ endif
 CXXFLAGS += -Iinclude -Iarch/$(ARCH)/include -ffreestanding -fno-rtti -fno-exceptions -fno-use-cxa-atexit \
             -fno-stack-protector -std=c++2a
 LDFLAGS += -nostdlib -T$(ROOT_DIR)/arch/$(ARCH)/$(LINK_SCRIPT)
-PRE_LIBS := $(shell $(CXX) -print-file-name=crtbegin.o) $(PRE_LIBS)
-LIBS += $(shell $(CXX) -print-file-name=crtend.o) -lgcc
+PRE_LIBS := $(shell $(CXX) -print-file-name=crtbegin.o) $(shell $(CXX) -print-file-name=crti.o) $(PRE_LIBS)
+LIBS += $(shell $(CXX) -print-file-name=crtn.o) $(shell $(CXX) -print-file-name=crtend.o) -lgcc
 DEFS += -DARCH=\"$(ARCH)\"
 
 ifeq ($(DEBUG),true)

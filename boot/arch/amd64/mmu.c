@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 28 of 2021, at 09:16 BRT
- * Last edited on February 05 of 2021 at 17:28 BRT */
+ * Last edited on February 05 of 2021 at 21:16 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -60,7 +60,7 @@ s:  level = (UInt64)PageDir;
      * that I mean that first we map what we can with 2MiB pages (jumping to the beginning if needed), and then we map
      * using 4KiB pages. */
 
-    while (!((Entry->Virtual + start) & 0x1FFFFF) && size >= 0x200000) {
+    while (!(((Entry->Virtual + start) & 0x1FFFFF) || ((Entry->Physical + start) & 0x1FFFFF)) && size >= 0x200000) {
         ((UInt64*)level)[((Entry->Virtual + start) >> 21) & 0x1FF] = MmuMakeEntry(Entry->Physical + start,
                                                                                   Entry->Type) | MMU_HUGE;
         start += 0x200000;

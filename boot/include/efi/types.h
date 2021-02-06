@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 01 of 2021, at 18:52 BRT
- * Last edited on January 27 of 2021 at 21:21 BRT */
+ * Last edited on February 05 05 of 2021 at 20:26 BRT */
 
 #pragma once
 
@@ -45,8 +45,7 @@ typedef union {
     EfiIpv6 V6;
 } EfiIp;
 
-#define Asm __asm__
-#define Volatile __volatile__
+#define asm __asm__
 
 #define True 1
 #define False 0

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 17:17 BRT
- * Last edited on February 04 of 2021 at 17:38 BRT */
+ * Last edited on February 05 of 2021 at 20:30 BRT */
 
 #include <chicago.h>
 #include <efi/lib.h>
@@ -11,7 +11,7 @@ UInt16 ArchGetFeatures(MenuEntryType Type) {
     /* Everything we have to do is check if we support 4KiB pages (as we need them, at least for now). */
 
     UInt64 val;    
-    Asm Volatile("mrs %0, id_aa64mmfr0_el1" : "=r"(val));
+    asm volatile("mrs %0, id_aa64mmfr0_el1" : "=r"(val));
 
     switch (Type) {
     case MenuEntryCHicago: {

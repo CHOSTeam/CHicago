@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on December 30 of 2020, at 15:07 BRT
-# Last edited on January 28 of 2020, at 11:37 BRT
+# Last edited on February 06 06 of 2020, at 10:57 BRT
 
 VERBOSE ?= false
 
@@ -41,6 +41,10 @@ ifeq (,$(wildcard $(OUT_DIR)/x86_64-elf))
 	$(NOECHO)make -C $(SOURCE_DIR)/gcc/build -j$(NPROC) all-target-libgcc \
 			 CFLAGS_FOR_TARGET='-g -O2 -mcmodel=large -mno-red-zone' 1>/dev/null 2>&1
 	$(NOECHO)make -C $(SOURCE_DIR)/gcc/build -j$(NPROC) install-gcc install-target-libgcc 1>/dev/null 2>&1
+	$(NOECHO)$(OUT_DIR)/bin/x86_64-elf-gcc -c -o \
+				 $(dirname `$(OUT_DIR)/bin/x86_64-elf-gcc -print-libgcc-file-name`)/crti.o crti.S
+	$(NOECHO)$(OUT_DIR)/bin/x86_64-elf-gcc -c -o \
+				 $(dirname `$(OUT_DIR)/bin/x86_64-elf-gcc -print-libgcc-file-name`)/crtn.o crtn.S
 endif
 
 prepare:

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 31 of 2021, at 13:44 BRT
- * Last edited on February 04 of 2021 at 17:42 BRT */
+ * Last edited on February 05 of 2021 at 20:27 BRT */
 
 /* Here we actually need one of the standard compiler headers, to access the offsetof function. */
 
@@ -19,7 +19,7 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo* BootInfo, UIntN A
     /* For setting up the tcr_el1 we need the id_aa64_mmfr0_el1 field (to get the physical address size). Also, let's
      * already disable IRQs and FIQs. */
 
-    Asm Volatile("mrs %0, id_aa64mmfr0_el1\n"
+    asm volatile("mrs %0, id_aa64mmfr0_el1\n"
                  "dsb ish; isb; mrs %1, sctlr_el1\n"
                  "mrs %2, CurrentEL\n"
                  "msr daifset, #0x0F; dsb sy; isb sy" : "=r"(val), "=r"(val2), "=r"(el));
@@ -29,12 +29,12 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo* BootInfo, UIntN A
     if ((el >> 2) == 1) {
         /* We're already in EL1, so, let's initially disable paging. */
 
-        Asm Volatile("msr sctlr_el1, %0; isb" :: "r"(val2));
+        asm volatile("msr sctlr_el1, %0; isb" :: "r"(val2));
     }
 
     /* Now this section of code is the same for everyone, as it just sets up page translation for EL1. */
 
-    Asm Volatile("msr mair_el1, %0\n"
+    asm volatile("msr mair_el1, %0\n"
                  "msr tcr_el1, %1; isb\n"
                  "msr ttbr0_el1, %2\n"
                  "msr ttbr1_el1, %3\n"
@@ -45,9 +45,9 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo* BootInfo, UIntN A
      * EL2 we have to drop to EL1. */
 
     if ((el >> 2) == 1) {
-        Asm Volatile("mov sp, %0" :: "r"(sp));
+        asm volatile("mov sp, %0" :: "r"(sp));
     } else {
-        Asm Volatile("msr sp_el1, %0\n"
+        asm volatile("msr sp_el1, %0\n"
                      "msr hcr_el2, %1\n"
                      "msr spsr_el2, %2\n"
                      "adr x4, 1f; msr elr_el2, x4\n"
@@ -60,6 +60,6 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo* BootInfo, UIntN A
     ((Void (*)(UIntN))Entry)(Arg);
 
 e:  while (True) {
-        Asm Volatile("wfi");
+        asm volatile("wfi");
     }
 }
