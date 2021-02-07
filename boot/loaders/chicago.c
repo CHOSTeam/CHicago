@@ -1,15 +1,11 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 06 of 2021 at 17:27 BRT */
+ * Last edited on February 07 of 2021 at 11:01 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
 #include <elf.h>
-
-/* TODO: Is there any way to alloc pages (using AllocatePages) while using a custom memory type (that doesn't break
- * under older firmwares)? If there is, we can simplify the CHAddMapping function to not use the CHMapping struct
- * (and also simplify some other parts of the code). */
 
 CHMapping *CHAddMapping(CHMapping *List, EfiVirtualAddress Virtual, UIntN Size, UInt8 Type,
                         EfiPhysicalAddress *Physical, Boolean Allocate) {
@@ -92,7 +88,7 @@ CHMapping *CHAddMapping(CHMapping *List, EfiVirtualAddress Virtual, UIntN Size, 
 
         return List;
     } else if (i != Null && i->Type == Type && (i->Type == CH_MEM_MMU || i->Virtual + i->Size == Virtual) &&
-               i->Physical + i->Size == *Physical) {
+               (i->Physical + i->Size == *Physical || (i->Type == CH_MEM_MMU && *Physical + Size == i->Physical))) {
         /* Continuous region, where the newly allocated physical address, and the virtual address that we were asked
          * to add/map, are just after one of the entries (so we just need to increase the size). */
 
@@ -159,12 +155,19 @@ CHMapping *CHAddMapping(CHMapping *List, EfiVirtualAddress Virtual, UIntN Size, 
     /* Now while we did add the entry in the right place, we need to colapse/merge together continuous entries. */
 
      for (i = List; i != Null && i->Next != Null; i = i->Next) {
-        while (i->Next != Null && i->Type == i->Next->Type && i->Type != CH_MEM_DEV && i->Type != CH_MEM_MMU && 
-               i->Virtual + i->Size == i->Next->Virtual && i->Physical + i->Size == i->Next->Physical) {
+        while (i->Next != Null && i->Type == i->Next->Type && i->Type != CH_MEM_DEV && 
+               ((i->Type != CH_MEM_MMU && i->Virtual + i->Size == i->Next->Virtual && i->Physical +
+                                          i->Size == i->Next->Physical) ||
+                (i->Type == CH_MEM_MMU && (i->Physical + i->Size == i->Next->Physical ||
+                                           i->Next->Physical + i->Next->Size == i->Physical)))) {
             ent = i->Next;
 
             i->Size += ent->Size;
             i->Next = ent->Next;
+
+            if (i->Physical > ent->Physical) {
+                i->Physical = ent->Physical;
+            }
 
             if (i->Next != Null) {
                 i->Next->Prev = i;
@@ -404,6 +407,69 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
     return EFI_SUCCESS;
 }
 
+static Boolean MemMapIsReserved(UInt32 Type) {
+    return Type == EfiReservedMemoryType || Type == EfiUnusableMemory || Type == EfiACPIReclaimMemory ||
+           Type == EfiACPIMemoryNVS || Type == EfiMemoryMappedIO || Type == EfiMemoryMappedIOPortSpace ||
+           Type == EfiPalCode || Type == EfiPersistantMemory;
+}
+
+static Boolean MemMapIsFree(UInt32 Type) {
+    return Type == EfiLoaderCode || Type == EfiBootServicesCode || Type == EfiBootServicesData ||
+           Type == EfiRuntimeServicesCode || Type == EfiRuntimeServicesData || Type == EfiConventionalMemory;
+}
+
+static UIntN MemMapAddEntry(CHBootInfoMemMap *MemMap, UIntN MemMapCount, UIntN Base, UIntN Count, UInt8 Type) {
+    /* First, check if we can expand to the left (moving the base address and increasing the size), or to the right
+     * (just increasing the size). */
+
+    if (MemMapCount != 0 && MemMap[MemMapCount - 1].Type == Type &&
+        MemMap[MemMapCount - 1].Base == Base + (Count << 12)) {
+        MemMap[MemMapCount - 1].Base = Base;
+        MemMap[MemMapCount - 1].Count += Count;
+        return MemMapCount - 1;
+    } else if (MemMapCount != 0 && MemMap[MemMapCount - 1].Type == Type &&
+               MemMap[MemMapCount - 1].Base + (MemMap[MemMapCount - 1].Count << 12) == Base) {
+        MemMap[MemMapCount - 1].Count += Count;
+        return MemMapCount - 1;
+    }
+
+    /* None of the above, so this is a whole new entry. */
+
+    MemMap[MemMapCount].Base = Base;
+    MemMap[MemMapCount].Count = Count;
+    MemMap[MemMapCount].Type = Type;
+
+    return MemMapCount;
+}
+
+static Void MemMapAddNormal(UInt8 Type, CHBootInfoMemMap *BootMemMap, UIntN *BootMemMapCount, UIntN EfiMemMap,
+                            UIntN EfiMemMapCount, UIntN EfiMemMapDSize, UIntN *EfiMemMapCur,
+                            Boolean (*Compare)(UInt32)) {
+    /* This function adds a "normal" mem map entry (reserved or free, that has no chance of having some kernel parts
+     * in it). First, let's check if we can't just expand the current entry instead of "creating" a new one. */
+
+    UIntN j = *EfiMemMapCur + 1;
+    EfiMemoryDescriptor *desc = (EfiMemoryDescriptor*)(EfiMemMap + *EfiMemMapCur * EfiMemMapDSize);
+
+    *BootMemMapCount = MemMapAddEntry(BootMemMap, *BootMemMapCount, (UIntN)desc->PhysicalStart,
+                                      (UIntN)desc->NumberOfPages, Type) + 1;
+
+    /* Now let's keep on expanding until we find some entry that is of a different type (or we reach the end of the
+     * memory map). */
+
+    while (j < EfiMemMapCount) {
+        if (!Compare((desc = (EfiMemoryDescriptor*)(EfiMemMap + j * EfiMemMapDSize))->Type)) {
+            break;
+        }
+
+        *BootMemMapCount = MemMapAddEntry(BootMemMap, *BootMemMapCount, (UIntN)desc->PhysicalStart,
+                                          (UIntN)desc->NumberOfPages, Type) + 1;
+        j++;
+    }
+
+    *EfiMemMapCur = j - 1;
+}
+
 EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     /* Entry should be valid, but let's make sure. */
 
@@ -629,96 +695,54 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     for (UIntN i = 0; i < mcount; i++) {
         EfiMemoryDescriptor *desc = (EfiMemoryDescriptor*)((UIntN)map + i * dsize);
-        UIntN base = (UIntN)desc->PhysicalStart, size = (UIntN)desc->NumberOfPages << 12;
-        UInt8 type = 0xFF;
+        UIntN base = (UIntN)desc->PhysicalStart, count = (UIntN)desc->NumberOfPages;
 
-        switch (desc->Type) {
-        case EfiReservedMemoryType:
-        case EfiUnusableMemory:
-        case EfiACPIReclaimMemory:
-        case EfiACPIMemoryNVS:
-        case EfiMemoryMappedIO:
-        case EfiMemoryMappedIOPortSpace:
-        case EfiPalCode:
-        case EfiPersistantMemory: {
-            type = CH_MEM_RES;
+        /* Any time (after the first entry) that we encounter a Null/base==0 entry, we can assume that the memmap is
+         * over, or that something is probably very wrong.
+         * In this first part of the function, other then that check, let's see if it's some reserved or free section
+         * that will NOT have the kernel in it (and that we don't need any special handling). If it is, let's go and
+         * add it to the kernel memmap. */
+
+        if (i && !base) {
             break;
-        }
-        case EfiBootServicesCode:
-        case EfiBootServicesData:
-        case EfiRuntimeServicesCode:
-        case EfiRuntimeServicesData:
-        case EfiConventionalMemory: {
-            type = CH_MEM_FREE;
-            break;
-        }
-        }
-
-        /* If type is still on its default value, this is an entry that we can't handle, or is a LoaderCode/Data
-         * entry, that may contain kernel code/data, and we have to handle those in a different way. */
-
-        if (type != 0xFF) {
-            mmap[mmapc].Base = base;
-            mmap[mmapc].Count = size >> 12;
-            mmap[mmapc++].Type = type;
+        } else if (MemMapIsReserved(desc->Type)) {
+            MemMapAddNormal(CH_MEM_RES, mmap, &mmapc, (UIntN)map, mcount, dsize, &i, MemMapIsReserved);
             continue;
-        } else if (desc->Type != EfiLoaderCode && desc->Type != EfiLoaderData) {
+        } else if (MemMapIsFree(desc->Type)) {
+            MemMapAddNormal(CH_MEM_FREE, mmap, &mmapc, (UIntN)map, mcount, dsize, &i, MemMapIsFree);
+            continue;
+        } else if (desc->Type != EfiLoaderData) {
             continue;
         }
 
-        /* For LoaderCode/LoaderData, we need to see if there is some kernel region that matches the entry. */
+        while (count) {
+            UIntN end = base + (count << 12), add = count;
+            CHMapping *ent = CHGetMapping(list, base, end);
 
-s:      ;CHMapping *ent = CHGetMapping(list, base, base + size);
+            /* Now for the entries that may contain kernel code/data, we have some different cases:
+             *     First, this entry doesn't contain anything of importance, in that case, just add it normally.
+             *     Second, this entry has some kernel region starting at the middle of it, in that case, let's add the
+             * free region before the kernel one, and then add the kernel region.
+             *     Third, the entry starts with a kernel region, just add it and increase the start (so that we can
+             * handle whats after it, like we do on the second case). */
 
-        if (ent == Null) {
-            /* Doesn't match, just add it all as avaliable. */
-
-            mmap[mmapc].Base = base;
-            mmap[mmapc].Count = size >> 12;
-            mmap[mmapc++].Type = CH_MEM_FREE;
-
-            continue;
-        } else if (ent->Physical == base) {
-            /* The region base perfectly matches with the base of the mmap entry! */
-
-            mmap[mmapc].Base = base;
-            mmap[mmapc].Count = size >> 12;
-            mmap[mmapc++].Type = ent->Type;
-
-            continue;
-        } else if (ent->Physical < base && (mmapc == 0 || mmap[mmapc - 1].Type != ent->Type)) {
-            /* Now, this be actually broken, it seems to work, but it may actually be broken (maybe I should later
-             * fizzle this around to test if there isn't anything broken?). */
-
-            EfiDrawString("The memory map seems to be corrupted.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
-            EfiFreePool(map);
-
-            return status;
-        } else if (ent->Physical < base) {
-            /* The region starts before the mmap entry. */
-
-            UIntN add = (size <= ent->Size - (base - ent->Physical)) ? size : ent->Size - (base - ent->Physical);
-            
-            mmap[mmapc - 1].Count += add >> 12;
-            size -= add;
-            base += add;
-
-            if (size == 0) {
-                continue;
+            if (ent == Null) {
+                mmapc = MemMapAddEntry(mmap, mmapc, base, count, CH_MEM_FREE) + 1;
+                break;
+            } else if (ent->Physical > base) {
+                UIntN add1 = (end - ent->Physical) >> 12;
+                add = (ent->Physical - base) >> 12;
+                mmapc = MemMapAddEntry(mmap, mmapc, base, add, CH_MEM_FREE) + 1;
+                mmapc = MemMapAddEntry(mmap, mmapc, ent->Physical, add1, ent->Type) + 1;
+                add += add1;
+            } else {
+                add = (ent->Physical + ent->Size > end ? count : ent->Physical + ent->Size - base) >> 12;
+                mmapc = MemMapAddEntry(mmap, mmapc, base, add, ent->Type) + 1;
             }
 
-            goto s;
+            count -= add;
+            base += add << 12;
         }
-
-        /* The region starts after, let's split it into two. */
-
-        mmap[mmapc].Base = base;
-        mmap[mmapc].Count = (ent->Physical - base) >> 12;
-        mmap[mmapc].Type = CH_MEM_FREE;
-        size -= ent->Physical - base;
-        base = ent->Physical;
-
-        goto s;
     }
 
     bi->MemoryMap.Count = mmapc;
