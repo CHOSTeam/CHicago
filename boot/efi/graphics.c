@@ -1,23 +1,29 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 06 of 2021, at 15:31 BRT
- * Last edited on February 05 of 2021 at 10:52 BRT */
+ * Last edited on February 07 of 2021 at 13:06 BRT */
 
 #include <efi/lib.h>
+
+static inline UInt32 GetColor(UInt8 Red, UInt8 Green, UInt8 Blue) {
+    /* Let's hope this is a newer version of clang/gcc, that implements the __BYTE_ORDER__ macro, else, we're going to
+     * default the byte order as little endian (as the first #if will return true). */
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    return 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    return (Blue << 24) | (Green << 16) | (Red << 8) | 0xFF;
+#else
+#error Invalid byte order (expected little endian or big endian)
+#endif
+}
 
 Void EfiFillScreen(UInt8 Red, UInt8 Green, UInt8 Blue) {
     /* Let's hope this is a newer version of clang/gcc, that implements the __BYTE_ORDER__ macro, else, we're going to
      * default the byte order as little endian (as the first #if will return true). */
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    UInt32 color = 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    UInt32 color = (Blue << 24) | (Green << 16) | (Red << 8) | 0xFF;
-#else
-#error Invalid byte order (expected little endian or big endian)
-#endif
-
-    EfiSetMemory32((Void*)EfiGop->Mode->FrameBufferBase, EfiGop->Mode->Info->Width * EfiGop->Mode->Info->Height, color);
+    EfiSetMemory32((Void*)EfiGop->Mode->FrameBufferBase, EfiGop->Mode->Info->Width * EfiGop->Mode->Info->Height,
+                   GetColor(Red, Green, Blue));
 }
 
 Void EfiPutPixel(UInt16 X, UInt16 Y, UInt8 Red, UInt8 Green, UInt8 Blue) {
@@ -27,17 +33,9 @@ Void EfiPutPixel(UInt16 X, UInt16 Y, UInt8 Red, UInt8 Green, UInt8 Blue) {
         return;
     }
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    UInt32 color = 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    UInt32 color = (Blue << 24) | (Green << 16) | (Red << 8) | 0xFF;
-#else
-#error Invalid byte order (expected little endian or big endian)
-#endif
-
     /* No need to calculate pitch nor anything like that, as the size of each pixel will always be 32-bits here. */
 
-    ((UInt32*)EfiGop->Mode->FrameBufferBase)[Y * EfiGop->Mode->Info->PixelsPerScanLine + X] = color;
+    ((UInt32*)EfiGop->Mode->FrameBufferBase)[Y * EfiGop->Mode->Info->PixelsPerScanLine + X] = GetColor(Red, Green, Blue);
 }
 
 Void EfiDrawRectangle(UInt16 X, UInt16 Y, UInt16 Width, UInt16 Height, UInt8 Red, UInt8 Green, UInt8 Blue) {
@@ -45,17 +43,10 @@ Void EfiDrawRectangle(UInt16 X, UInt16 Y, UInt16 Width, UInt16 Height, UInt8 Red
         return;
     }
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    UInt32 color = 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    UInt32 color = (Blue << 24) | (Green << 16) | (Red << 8) | 0xFF;
-#else
-#error Invalid byte order (expected little endian or big endian)
-#endif
-
     /* Save the start, so that we don't have to recalculate it all the time. */
 
-    UInt32 *start = &((UInt32*)EfiGop->Mode->FrameBufferBase)[Y * EfiGop->Mode->Info->PixelsPerScanLine + X];
+    UInt32 *start = &((UInt32*)EfiGop->Mode->FrameBufferBase)[Y * EfiGop->Mode->Info->PixelsPerScanLine + X],
+           color = GetColor(Red, Green, Blue);
     UInt16 tw = X + Width >= EfiGop->Mode->Info->Width ? EfiGop->Mode->Info->Width - X : Width;
 
     for (UInt16 i = 0; i < Height; i++) {
@@ -87,15 +78,8 @@ Void EfiFillRectangle(UInt16 X, UInt16 Y, UInt16 Width, UInt16 Height, UInt8 Red
         return;
     }
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    UInt32 color = 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    UInt32 color = (Blue << 24) | (Green << 16) | (Red << 8) | 0xFF;
-#else
-#error Invalid byte order (expected little endian or big endian)
-#endif
-
-    UInt32 *start = &((UInt32*)EfiGop->Mode->FrameBufferBase)[Y * EfiGop->Mode->Info->PixelsPerScanLine + X];
+    UInt32 *start = &((UInt32*)EfiGop->Mode->FrameBufferBase)[Y * EfiGop->Mode->Info->PixelsPerScanLine + X],
+           color = GetColor(Red, Green, Blue);
     UInt16 tw = X + Width >= EfiGop->Mode->Info->Width ? EfiGop->Mode->Info->Width - X : Width;
 
     /* Alternative way to fill the screen: If the X is 0 and the width is the screen's width, we can SetMemory the whole

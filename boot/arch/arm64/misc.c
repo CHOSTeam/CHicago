@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 17:17 BRT
- * Last edited on February 05 of 2021 at 20:30 BRT */
+ * Last edited on February 07 of 2021 at 13:02 BRT */
 
 #include <chicago.h>
 #include <efi/lib.h>
@@ -24,28 +24,5 @@ UInt16 ArchGetFeatures(MenuEntryType Type) {
 }
 
 SiaFile *ArchGetBestFitCHicago(SiaHeader *Header, UIntN Size, UInt16 *Features) {
-    /* Like on x86, here we only support 48-bits addressing (the documentation at least says that we can assume every
-     * arm64 board will support it). */
-
-    if (Header == Null || Features == Null) {
-        return Null;
-    }
-
-    for (UIntN i = 0; i < sizeof(Header->KernelImages) / sizeof(UInt64); i++) {
-        if (Header->KernelImages[i] < sizeof(SiaHeader) || Header->KernelImages[i] + sizeof(SiaFile) >= Size) {
-            continue;
-        }
-
-        SiaFile *file = (SiaFile*)((UIntN)Header + Header->KernelImages[i]);
-
-        if (!file->Offset || !file->Size || file->Offset + file->Size > Size || !(file->Flags & SIA_ARM64)) {
-            continue;
-        }
-
-        *Features = SIA_ARM64;
-
-        return file;
-    }
-
-    return Null;
+    return CHGetKernel(Header, Size, SIA_ARM64, Features);
 }

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on February 06 of 2021 at 17:17 BRT */
+ * Last edited on February 07 of 2021 at 13:28 BRT */
 
 #pragma once
 
@@ -84,3 +84,7 @@ struct _CHMapping {
 };
 
 CHMapping *CHAddMapping(CHMapping*, EfiVirtualAddress, UIntN, UInt8, EfiPhysicalAddress*, Boolean);
+SiaFile *CHGetKernel(SiaHeader*, UIntN, UInt16, UInt16*);
+EfiStatus CHWalkMmuLevel(UIntN*, CHMapping**, EfiVirtualAddress, UInt8, UInt16, UInt8, Boolean(*)(UIntN),
+                         Boolean(*)(UIntN), UIntN*);
+EfiStatus CHMapKernel(Void*, CHMapping**, EfiStatus(*)(Void*, CHMapping**, CHMapping*));

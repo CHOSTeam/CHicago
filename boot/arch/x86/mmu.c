@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 22:53 BRT
- * Last edited on February 06 of 2021 at 15:39 BRT */
+ * Last edited on February 07 of 2021 at 13:37 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -11,7 +11,15 @@ static inline UInt32 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Type) {
     return Physical | MMU_PRESENT | ((Type != CH_MEM_KCODE && Type != CH_MEM_KDATA_RO) ? MMU_WRITE : 0);
 }
 
-static EfiStatus MmuMap(UInt32 *PageDir, CHMapping **List, CHMapping *Entry) {
+static Boolean MmuIsPresent(UInt32 Table) {
+    return Table & MMU_PRESENT;
+}
+
+static Boolean MmuIsHuge(UInt32 Table) {
+    return Table & MMU_HUGE;
+}
+
+static EfiStatus MmuMap(Void *Directory, CHMapping **List, CHMapping *Entry) {
     if (Entry->Type == CH_MEM_MMU) {
         return EFI_SUCCESS;
     }
@@ -19,11 +27,12 @@ static EfiStatus MmuMap(UInt32 *PageDir, CHMapping **List, CHMapping *Entry) {
     /* Simillar to the arm64 code (and the amd64 code), but we only have two levels to worry about (the PD and the
      * PT). */
 
+    EfiStatus status;
     UIntN start = 0, size = Entry->Size, level;
 
     /* First level is 4MiB, let's map what we can using it. */
 
-s:  level = (UIntN)PageDir;
+s:  level = (UIntN)Directory;
 
     while (!(((Entry->Virtual + start) & 0x3FFFFF) || ((Entry->Physical + start) & 0x3FFFFF)) && size >= 0x400000) {
         ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] = MmuMakeEntry(Entry->Physical + start,
@@ -38,27 +47,9 @@ s:  level = (UIntN)PageDir;
 
     /* We still have memory left to map, let's use 4KiB pages. */
 
-    UInt32 tbl = ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF];
-
-    if (!(tbl & MMU_PRESENT)) {
-        /* Same things that we do on MmuWalkLevel (on amd64/arm64), but here we only have to do it for one level. */
-
-        EfiPhysicalAddress addr;
-
-        if ((*List = CHAddMapping(*List, UINT32_MAX, 0x1000, CH_MEM_MMU, &addr, True)) == Null || !addr) {
-            return EFI_OUT_OF_RESOURCES;
-        }
-
-        EfiZeroMemory((Void*)addr, 0x1000);
-
-        ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] = addr | MMU_PRESENT | MMU_WRITE;
-        level = ((UInt32*)level)[((Entry->Virtual + start) >> 22) & 0x3FF] & ~0xFFF;
-    } else if (tbl & MMU_HUGE) {
-        EfiDrawString("The MMU paging structures got corrupted during the initialization process.",
-                      5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
-        return EFI_UNSUPPORTED;
-    } else {
-        level = tbl & ~0xFFF;
+    if (EFI_ERROR((status = CHWalkMmuLevel((UInt32*)level, List, Entry->Virtual + start, 22, 0x3FF,
+                                           MMU_PRESENT | MMU_WRITE, MmuIsPresent, MmuIsHuge, &level)))) {
+        return status;
     }
 
     while (size) {
@@ -98,17 +89,8 @@ EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
 
     EfiZeroMemory(pd, 0x1000);
 
-    CHMapping sent = { ((UIntN)ArchJumpIntoCHicago) & ~0xFFF, ((UIntN)ArchJumpIntoCHicago) & ~0xFFF, 0x1000,
-                       CH_MEM_KCODE, Null, Null };
-
-    if (EFI_ERROR((status = MmuMap(pd, List, &sent)))) {
+    if (EFI_ERROR((status = CHMapKernel(pd, List, MmuMap)))) {
         return status;
-    }
-
-    for (CHMapping *ent = *List; ent != Null; ent = ent->Next) {
-        if (EFI_ERROR((status = MmuMap(pd, List, ent)))) {
-            return status;
-        }
     }
 
     /* Last but not least: Create the recursive entry. */

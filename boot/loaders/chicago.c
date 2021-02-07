@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 07 of 2021 at 11:01 BRT */
+ * Last edited on February 07 of 2021 at 13:27 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -178,6 +178,84 @@ CHMapping *CHAddMapping(CHMapping *List, EfiVirtualAddress Virtual, UIntN Size, 
     }
 
     return List;
+}
+
+SiaFile *CHGetKernel(SiaHeader *Header, UIntN Size, UInt16 Type, UInt16 *Features) {
+    /* Default/generic GetBestFit for when we just have to find the first with the type matching (without worring about
+     * fallback nor anything like that). */
+
+    if (Header == Null || Features == Null) {
+        return Null;
+    }
+
+    for (UIntN i = 0; i < sizeof(Header->KernelImages) / sizeof(UInt64); i++) {
+        if (Header->KernelImages[i] < sizeof(SiaHeader) || Header->KernelImages[i] + sizeof(SiaFile) >= Size) {
+            continue;
+        }
+
+        SiaFile *file = (SiaFile*)((UIntN)Header + Header->KernelImages[i]);
+
+        if (!file->Offset || !file->Size || file->Offset + file->Size > Size || !(file->Flags & Type)) {
+            continue;
+        }
+
+        *Features = Type;
+
+        return file;
+    }
+
+    return Null;
+}
+
+EfiStatus CHWalkMmuLevel(UIntN *Level, CHMapping **List, EfiVirtualAddress Virtual, UInt8 Shift, UInt16 Mask,
+                         UInt8 Flags, Boolean (*IsPresent)(UIntN), Boolean (*IsHuge)(UIntN), UIntN *Out) {
+    /* This is just the arm64/amd64 MmuWalkLevel function, but made a bit more arch-independent (at least we can use it
+     * on both arm64 and amd64). */
+
+    UIntN tbl = Level[(Virtual >> Shift) & Mask];
+
+    if (!IsPresent(tbl)) {
+        /* Allocate/reserve memory for the table entry. */
+
+        EfiPhysicalAddress addr;
+
+        if ((*List = CHAddMapping(*List, UINTN_MAX, 0x1000, CH_MEM_MMU, &addr, True)) == Null || !addr) {
+            return EFI_OUT_OF_RESOURCES;
+        }
+
+        EfiZeroMemory((Void*)addr, 0x1000);
+
+        Level[(Virtual >> Shift) & Mask] = addr | Flags;
+        *Out = addr;
+    } else if (IsHuge(tbl)) {
+        EfiDrawString("The MMU paging structures got corrupted during the initialization process.",
+                      5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
+        return EFI_UNSUPPORTED;
+    } else {
+        *Out = tbl & ~0xFFF;
+    }
+
+    return EFI_SUCCESS;
+}
+
+EfiStatus CHMapKernel(Void *Directory, CHMapping **List, EfiStatus (*Map)(Void*, CHMapping**, CHMapping*)) {
+    /* This function just maps the kernel and the jump address. */
+
+    CHMapping sent = { ((UIntN)ArchJumpIntoCHicago) & ~0xFFF, ((UIntN)ArchJumpIntoCHicago) & ~0xFFF, 0x1000,
+                       CH_MEM_KCODE, Null, Null };
+    EfiStatus status = Map(Directory, List, &sent);
+
+    if (EFI_ERROR(status)) {
+        return status;
+    }
+
+    for (CHMapping *ent = *List; ent != Null; ent = ent->Next) {
+        if (EFI_ERROR((status = Map(Directory, List, ent)))) {
+            return status;
+        }
+    }
+
+    return EFI_SUCCESS;
 }
 
 static CHMapping *CHGetMapping(CHMapping *List, UIntN Start, UIntN End) {
