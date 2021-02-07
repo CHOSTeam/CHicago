@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 07 of 2021 at 13:27 BRT */
+ * Last edited on February 07 of 2021 at 14:44 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -208,7 +208,7 @@ SiaFile *CHGetKernel(SiaHeader *Header, UIntN Size, UInt16 Type, UInt16 *Feature
 }
 
 EfiStatus CHWalkMmuLevel(UIntN *Level, CHMapping **List, EfiVirtualAddress Virtual, UInt8 Shift, UInt16 Mask,
-                         UInt8 Flags, Boolean (*IsPresent)(UIntN), Boolean (*IsHuge)(UIntN), UIntN *Out) {
+                         UInt16 Flags, Boolean (*IsPresent)(UIntN), Boolean (*IsHuge)(UIntN), UIntN *Out) {
     /* This is just the arm64/amd64 MmuWalkLevel function, but made a bit more arch-independent (at least we can use it
      * on both arm64 and amd64). */
 

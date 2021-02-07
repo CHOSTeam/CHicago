@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 01 of 2021, at 15:13 BRT
-# Last edited on February 06 of 2021, at 15:29 BRT
+# Last edited on February 07 of 2021, at 17:26 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are, etc).
@@ -24,7 +24,7 @@ $(error Invalid/unsupported architecture $(ARCH))
 endif
 
 LD := lld-link
-CFLAGS += -Iinclude -Iarch/$(ARCH)/include -ffreestanding -fno-stack-protector -fshort-wchar -std=c2x -Wall -Wextra
+CFLAGS += -Iinclude -Iarch/$(ARCH)/include -ffreestanding -fno-stack-protector -fshort-wchar -flto -std=c2x -Wall -Wextra
 LDFLAGS += -nodefaultlib -entry:EfiMain -subsystem:efi_application -dll
 LIBS += $(shell $(CC) -print-libgcc-file-name)
 DEFS += -DARCH=\"$(ARCH)\"
