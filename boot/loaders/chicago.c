@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 08 of 2021 at 11:16 BRT */
+ * Last edited on February 08 of 2021 at 14:23 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -715,13 +715,19 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     /* And now that we know where the physical memory starts and end, we can allocate/map/reserve/add a region that
      * the kernel expects, where it will put a list of physical memory regions. */
     
-    UIntN regv = (UIntN)end;
+    UIntN regv = (UIntN)end, regcnt;
+
+    if (maxaddr - minaddr + 0x3FFFFF < maxaddr - minaddr) {
+        regcnt = (UINTN_MAX >> 22) + 1;
+    } else {
+        regcnt = ((maxaddr - minaddr + 0x3FFFFF) & ~0x3FFFFF) >> 22;
+    }
 
     asize = (maxaddr - minaddr) >> 12;
 #ifdef _WIN64
-    asize += ((maxaddr - minaddr) >> 22) * 0x90;
+    asize += regcnt * 0x90;
 #else
-    asize += ((maxaddr - minaddr) >> 22) * 0x88;
+    asize += regcnt * 0x88;
 #endif
     asize = (asize + 0xFFF) & ~0xFFF;
 
