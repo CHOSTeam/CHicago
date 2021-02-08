@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 31 of 2021, at 13:45 BRT
- * Last edited on February 06 of 2021 at 11:15 BRT */
+ * Last edited on February 06 of 2021 at 12:52 BRT */
 
 #include <arch.h>
 #include <stddef.h>
@@ -39,10 +39,22 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
 
     /* Disable interrupts/exceptions/IRQs, enable some required things (like large/huge pages), set the new pagedir,
      * and jump to the kernel!
-     * One little thing: On amd64, we have to remember to set the NXE bit on the EFER, else, we may crash on systems that
-     * the firmware doesn't enable it by default. */
+     * On amd64, we have to remember to set the NXE bit on the EFER, else, we may crash on systems that the firmware
+     * doesn't enable it by default. And we also have to remember to disable PAE on x86 if it is enabled (as we don't
+     * support it yet).
+     * Also on x86, we have to take caution with the stack alignment, as we have one push instruction before the call
+     * (and the System V ABI expects the stack to be 16-bytes aligned before the call). */
 
 #ifdef __i386__
+    if (val2 & 0x20) {
+        asm volatile("mov %cr0, %ebx; btr $31, %ebx; mov %ebx, %cr0\n"
+                     "mov %cr4, %ebx; btr $5, %ebx; mov %ebx, %cr4");
+    }
+
+    if (sp + 4 > Arg + offsetof(CHBootInfo, KernelStack) + sizeof(BootInfo->KernelStack)) {
+        sp -= 0x10;
+    }
+
     asm volatile("mov %0, %%ebx\n"
                  "mov %1, %%ecx\n"
                  "mov %2, %%edx\n"
@@ -52,7 +64,8 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
                  "mov %%edx, %%esp\n"
                  "xor %%ebp, %%ebp\n"
                  "push %%ecx\n"
-                 "call *%%ebx" :: "r"(Entry), "r"(Arg), "r"(sp), "r"(BootInfo->Directory) : "%ebx", "%ecx", "%edx");
+                 "call *%%ebx" :: "r"(Entry), "r"(Arg), "r"(sp + 4), "r"(BootInfo->Directory)
+                                : "%ebx", "%ecx", "%edx");
 #else
     WriteMSR(0xC0000080, ReadMSR(0xC0000080) | 0x800);
     asm volatile("rdmsr" : "=a"(val1) : "c"(0xC0000080));
