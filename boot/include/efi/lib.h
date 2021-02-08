@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 17:31 BRT
- * Last edited on January 31 of 2021 at 11:27 BRT */
+ * Last edited on February 07 of 2021 at 18:40 BRT */
 
 #pragma once
 
@@ -9,11 +9,11 @@
 #include <efi/st.h>
 
 typedef struct {
-    UInt32 Offset, Width, Height, Left, Top, Advance;
+    Int32 Offset, Width, Height, Left, Top, Advance;
 } EfiFontGlyph;
 
 typedef struct {
-    UInt32 Ascender, Descender, Height;
+    Int32 Ascender, Descender, Height;
     const EfiFontGlyph *GlyphInfo;
     const UInt8 *GlyphData;
 } EfiFontData;

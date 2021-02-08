@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 20 of 2021, at 11:15 BRT
- * Last edited on January 26 of 2021 at 20:59 BRT */
+ * Last edited on February 07 of 2021 at 18:17 BRT */
 
 #include <efi/lib.h>
 
@@ -49,19 +49,19 @@ Void EfiDrawCharacter(Char8 Data, UInt16 X, UInt16 Y, UInt8 Red, UInt8 Green, UI
 
     const EfiFontGlyph *info = &EfiFont.GlyphInfo[(UInt8)Data];
     const UInt8 *data = &EfiFont.GlyphData[info->Offset];
-    UInt32 gx = info->Left, gy = EfiFont.Ascender - info->Top;
-    UInt32 *start = &((UInt32*)EfiGop->Mode->FrameBufferBase)[(Y + gy) * EfiGop->Mode->Info->PixelsPerScanLine +
+    UInt32 gx = info->Left, gy = EfiFont.Ascender - info->Top,
+           *start = &((UInt32*)EfiGop->Mode->FrameBufferBase)[(Y + gy) * EfiGop->Mode->Info->PixelsPerScanLine +
                                                               X + gx];
 
     /* Using the same font drawing method as the kernel, for description of what exactly the code is doing, see
      * vid/image.cxx. */
 
-    for (UInt32 y = 0; y < info->Height; y++) {
+    for (Int32 y = 0; y < info->Height; y++) {
         if (Y + gy + y >= EfiGop->Mode->Info->Height) {
             break;
         }
     
-        for (UInt32 x = 0; x < info->Width; x++) {
+        for (Int32 x = 0; x < info->Width; x++) {
             if (X + gx + x >= EfiGop->Mode->Info->Width) {
                 break;
             }

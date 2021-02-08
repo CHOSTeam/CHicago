@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on February 07 of 2021 at 17:24 BRT */
+ * Last edited on February 08 of 2021 at 10:29 BRT */
 
 #pragma once
 
@@ -54,8 +54,8 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
     UInt32 Magic;
-    UIntN KernelStart, RegionsStart, KernelEnd, EfiTempAddress;
-    UInt64 MinPhysicalAddress, MaxPhysicalAddress, PhysicalMemorySize;
+    UIntN KernelStart, RegionsStart, KernelEnd, EfiTempAddress,
+          MinPhysicalAddress, MaxPhysicalAddress, PhysicalMemorySize;
     Void *Directory;
 
     struct __attribute__((packed)) {

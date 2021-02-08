@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 12:46 BRT
- * Last edited on February 07 of 2021 at 13:28 BRT */
+ * Last edited on February 07 of 2021 at 20:39 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -49,10 +49,12 @@ static EfiStatus MmuMap(Void *Directory, CHMapping **List, CHMapping *Entry) {
 s:  level = (UInt64)pd[high];
 
     if (EFI_ERROR((status = CHWalkMmuLevel((UInt64*)level, List, Entry->Virtual + start, 39, 0x1FF,
-                                           MMU_PRESENT | MMU_TABLE, MmuIsPresent, MmuIsHuge, &level)))) {
+                                           MMU_PRESENT | MMU_TABLE | MMU_INNER_SHARE | MMU_ACCESS,
+                                           MmuIsPresent, MmuIsHuge, &level)))) {
         return status;
     } else if (EFI_ERROR((status = CHWalkMmuLevel((UInt64*)level, List, Entry->Virtual + start, 30, 0x1FF,
-                                                  MMU_PRESENT | MMU_TABLE, MmuIsPresent, MmuIsHuge, &level)))) {
+                                                  MMU_PRESENT | MMU_TABLE | MMU_INNER_SHARE | MMU_ACCESS,
+                                                  MmuIsPresent, MmuIsHuge, &level)))) {
         return status;
     }
 
@@ -72,7 +74,8 @@ s:  level = (UInt64)pd[high];
     /* Finally, last level walk, as now we gonna reach the 4KiB mappings. */
 
     if (EFI_ERROR((status = CHWalkMmuLevel((UInt64*)level, List, Entry->Virtual + start, 21, 0x1FF,
-                                           MMU_PRESENT | MMU_TABLE, MmuIsPresent, MmuIsHuge, &level)))) {
+                                           MMU_PRESENT | MMU_TABLE | MMU_INNER_SHARE | MMU_ACCESS,
+                                           MmuIsPresent, MmuIsHuge, &level)))) {
         return status;
     }
 
@@ -134,8 +137,8 @@ EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
 
     /* Create the recursive entries. */
 
-    pd[1][510] = addr | MMU_PRESENT | MMU_TABLE;
-    pd[1][511] = (addr + 0x1000) | MMU_PRESENT | MMU_TABLE;
+    pd[1][510] = addr | MMU_PRESENT | MMU_TABLE | MMU_INNER_SHARE | MMU_ACCESS;
+    pd[1][511] = (addr + 0x1000) | MMU_PRESENT | MMU_TABLE | MMU_INNER_SHARE | MMU_ACCESS;
 
     return EFI_SUCCESS;
 }

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 07 of 2021 at 14:44 BRT */
+ * Last edited on February 08 of 2021 at 11:16 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -649,8 +649,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
      * the EFI memory map, we need to call EfiGetMemoryMap (duh). */
 
     UInt32 dver = 0;
-    UInt64 minaddr = 0, maxaddr = 0, maxsize = 0;
-    UIntN dsize = 0, mmapc = 0, msize = 0, mcount = 0, mkey = 0;
+    UIntN minaddr = UINTN_MAX, maxaddr = 0, maxsize = 0, dsize = 0, mmapc = 0, msize = 0, mcount = 0, mkey = 0;
     EfiMemoryDescriptor *map = EfiGetMemoryMap(&mcount, &mkey, &dsize, &dver);
 
     if (map == Null) {
