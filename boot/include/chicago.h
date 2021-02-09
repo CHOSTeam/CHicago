@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on February 08 of 2021 at 18:10 BRT */
+ * Last edited on February 09 of 2021 at 18:32 BRT */
 
 #pragma once
 
@@ -79,10 +79,10 @@ typedef struct __attribute__((packed)) {
     } BootImage;
 
     struct __attribute__((packed)) {
-        UIntN Width, Height, Size, Address;
+        UIntN Width, Height, BackBuffer, FrontBuffer;
     } FrameBuffer;
 
-    UInt8 KernelStack[0x10000];
+    UInt8 KernelStack[0x2000];
 } CHBootInfo;
 
 struct _CHMapping {

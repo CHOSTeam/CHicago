@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 09 of 2021 at 13:33 BRT */
+ * Last edited on February 09 of 2021 at 18:34 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -759,18 +759,20 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     EfiCopyMemory(nbuf, buf, size);
     EfiFreePool(buf);
 
-    /* Map the framebuffer into virtual memory. */
-
-    UIntN fbv = (UIntN)end;
+    /* Map the framebuffer (back buffer) into virtual memory, and alloc memory for the front buffer. */
 
     addr = EfiGop->Mode->FrameBufferBase;
     asize = (EfiGop->Mode->FrameBufferSize + 0xFFF) & ~0xFFF;
 
+    UIntN backv = (UIntN)end, frontv = (UIntN)end + asize;
+
     if ((list = CHAddMapping(list, end, asize, CH_MEM_DEV, &addr, False)) == Null || !addr) {
+        return EFI_OUT_OF_RESOURCES;
+    } else if ((list = CHAddMapping(list, end + asize, asize, CH_MEM_KDATA, &addr, False)) == Null || !addr) {
         return EFI_OUT_OF_RESOURCES;
     }
 
-    end += asize;
+    end += asize * 2;
 
     /* Allocate space for the memory map, so that the kernel knows which PHYSICAL memory regions are free. For getting
      * the EFI memory map, we need to call EfiGetMemoryMap (duh). */
@@ -882,8 +884,8 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     bi->BootImage.Data = nbufv;
     bi->FrameBuffer.Width = EfiGop->Mode->Info->Width;
     bi->FrameBuffer.Height = EfiGop->Mode->Info->Height;
-    bi->FrameBuffer.Size = EfiGop->Mode->FrameBufferSize;
-    bi->FrameBuffer.Address = fbv;
+    bi->FrameBuffer.BackBuffer = backv;
+    bi->FrameBuffer.FrontBuffer = frontv;
 
     /* Now we can create the page directory, and finish filling the boot info struct. */
 
