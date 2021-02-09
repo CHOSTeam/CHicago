@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 08 of 2021 at 14:23 BRT */
+ * Last edited on February 09 of 2021 at 13:33 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -377,8 +377,141 @@ static EfiStatus SiaReadFile(UInt8 *SourceAddress, UIntN SourceSize, SiaFile *Fi
 	return EFI_SUCCESS;
 }
 
+static Boolean IsDecimal(Char8 Value) {
+    return Value >= '0' && Value <= '9';
+}
+
+static Boolean IsHex(Char8 Value) {
+    return IsDecimal(Value) || (Value >= 'a' && Value <= 'f') || (Value >= 'A' && Value <= 'F');
+}
+
+static UIntN FromHex(Char8 Value) {
+    return IsDecimal(Value) ? Value - '0' : ((Value >= 'a' && Value <= 'f' ? (Value - 'a') : (Value - 'A')) + 10);
+}
+
+static Void SiaLoadSymbols(UInt8 *Buffer, UIntN Size, SiaFile *File, UIntN *End, UIntN *Count, CHMapping **List) {
+    /* First, read the symbol list (it is a big string, so we gonna need to parse it). */
+
+    if (!File->Size) {
+        return;
+    }
+
+    UIntN i = 0, start = 0, cur = 0, namesize = 0;
+    Char8 *syms = EfiAllocateZeroPool(File->Size + 1);
+
+    if (syms == Null || EFI_ERROR(SiaReadFile(Buffer, Size, File, 0, File->Size, (UInt8*)syms))) {
+        EfiFreePool(syms);
+        return;
+    }
+
+    /* Now, let's do two important things at the same time: First, check if all the entries are valid, second, store
+     * the length of all names combined (we gonna have a single big names section after the symbols structs). Of course,
+     * before starting that, we first have to parse the first line, which SHOULD have the amount of lines/entries. */
+
+    while (cur < File->Size && IsDecimal(syms[cur])) {
+        *Count = (*Count * 10) + syms[cur++] - '0';
+    }
+
+    if (!cur || !*Count || syms[cur++] != '\n') {
+        EfiFreePool(syms);
+        *Count = 0;
+        return;
+    }
+
+    for (start = cur; i < *Count && cur < File->Size && syms[cur]; namesize++, cur++, i++) {
+        /* The entries are all on the format of '<address in hex> <size in hex> <ch> <name>', the hex values don't
+         * have the 0x on the start, and there is only one entry per line (everything after the ch is parsed as the
+         * name, and not validated). */
+
+        if (!IsHex(syms[cur])) {
+            EfiFreePool(syms);
+            *Count = 0;
+            return;
+        }
+
+        for (; cur < File->Size && IsHex(syms[cur]); cur++) ;
+
+        if (cur + 2 >= File->Size || syms[cur++] != ' ' || !IsHex(syms[cur])) {
+            EfiFreePool(syms);
+            *Count = 0;
+            return;
+        }
+
+        for (; cur < File->Size && IsHex(syms[cur]); cur++) ;
+
+        if (cur + 2 >= File->Size || syms[cur++] != ' ' || !syms[cur] || syms[cur] == '\n') {
+            EfiFreePool(syms);
+            *Count = 0;
+            return;
+        }
+
+        for (; cur < File->Size && syms[cur] && syms[cur] != '\n'; cur++, namesize++) ;
+
+        if (i + 1 < *Count && (cur >= File->Size || syms[cur] != '\n')) {
+            EfiFreePool(syms);
+            *Count = 0;
+            return;
+        }
+    }
+
+    if (i < *Count) {
+        return;
+    }
+
+    /* Now we just need to alloc the symbols region, and fill it (parse the addresses, write the names to the right
+     * place, etc). */
+
+    EfiPhysicalAddress addr;
+    UIntN size = (*Count * sizeof(CHBootInfoSymbol) + namesize + 0xFFF) & ~0xFFF;
+
+    if ((*List = CHAddMapping(*List, *End, size, CH_MEM_KDATA_RO, &addr, True)) == Null || !addr) {
+        EfiFreePool(syms);
+        *Count = 0;
+        return;
+    }
+
+    EfiZeroMemory((Void*)addr, size);
+
+    /* Also, as now everything is allocated, and we know the symbol entries are valid, we can't fail anymore lol. */
+
+    CHBootInfoSymbol *ksyms = (CHBootInfoSymbol*)addr;
+    Char8 *namesp = (Char8*)(addr + *Count * sizeof(CHBootInfoSymbol)),
+          *namesv = (Char8*)(*End + *Count * sizeof(CHBootInfoSymbol));
+
+    for (i = 0, cur = start; i < *Count && cur < File->Size; *namesp++ = 0, namesv++, cur++, i++) {
+        CHBootInfoSymbol *sym = &ksyms[i];
+
+        sym->Start = sym->End = 0;
+        sym->Name = namesv;
+
+        while (IsHex(syms[cur])) {
+            sym->Start = (sym->Start * 16) + FromHex(syms[cur++]);
+        }
+
+        cur++;
+
+        while (IsHex(syms[cur])) {
+            sym->End = (sym->End * 16) + FromHex(syms[cur++]);
+        }
+
+        cur += 3;
+        sym->End += sym->Start;
+
+        while (cur < File->Size && syms[cur] && syms[cur] != '\n') {
+            *namesp++ = syms[cur++];
+            namesv++;
+        }
+    }
+
+    *End += size;
+
+    EfiFreePool(syms);
+
+    return;
+}
+
 static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UIntN *Entry, UIntN *Start, UIntN *End,
-                               CHMapping **List) {
+                               UIntN *SymStart, UIntN *SymCount, CHMapping **List) {
     /* First, check if the SIA file is valid and not corrupted. */
 
     EfiStatus status = SiaCheck(Buffer, Size);
@@ -421,24 +554,16 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
     /* Now we need to load all the sections into memory, and for that, we need the ELF program headers. Let's allocate
      * some space and load them. */
 
-    ElfProgHeader *phdrs = EfiAllocatePool(ehdr.ProgHeaderCount * sizeof(ElfProgHeader));
+    ElfProgHeader phdrs[ehdr.ProgHeaderCount];
 
-    if (phdrs == Null) {
-        EfiDrawString("The system is out of memory (couldn't alloc memory for reading the program headers).", 5,
-                      EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
-        return EFI_OUT_OF_RESOURCES;
-    } else if ((EFI_ERROR((status = SiaReadFile(Buffer, Size, file, ehdr.ProgHeaderOffset,
-                                                ehdr.ProgHeaderCount * sizeof(ElfProgHeader), (UInt8*)phdrs))))) {
+    if (EFI_ERROR((status = SiaReadFile(Buffer, Size, file, ehdr.ProgHeaderOffset,
+                                        ehdr.ProgHeaderCount * sizeof(ElfProgHeader), (UInt8*)phdrs)))) {
         EfiDrawString("Couldn't read the kernel ELF program headers.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
-        EfiFreePool(phdrs);
         return status;
     }
 
     /* The sections all have both the virtual address (as we're supposed to jump into the kernel after enabling
      * paging) and the physical address, we need to load everything into the physical address space. */
-
-    *Start = UINTN_MAX;
-    *End = 0;
 
     for (UIntN i = 0; i < ehdr.ProgHeaderCount; i++) {
         /* And here we are fixing 0x1000 as the page size again lol. */
@@ -454,7 +579,6 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
                                                                   ((phdr->Flags & 0x02) ? CH_MEM_KDATA :
                                                                                           CH_MEM_KDATA_RO),
                                   &addr, True)) == Null || !addr) {
-            EfiFreePool(phdrs);
             return status;
         }
 
@@ -471,16 +595,19 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
         if (phdr->FileSize && EFI_ERROR((status = SiaReadFile(Buffer, Size, file, phdr->Offset, phdr->FileSize,
                                                               (UInt8*)addr)))) {
             EfiDrawString("Couldn't read one of the kernel sections.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
-            EfiFreePool(phdrs);
             return status;
         }
     }
 
-    /* All done now, free the memory we allocated for reading the prog headers, and save the entry point. */
-
-    EfiFreePool(phdrs);
-
     *Entry = ehdr.Entry;
+
+    /* Now we need to init the symbol table, for this let's call another function (which does only that), it doesn't
+     * return any status code (as it's okay if we don't load the symtab/fail to load it). */
+
+    if (file->Next) {
+        *SymStart = *End;
+        SiaLoadSymbols(Buffer, Size, (SiaFile*)&Buffer[file->Next], End, SymCount, List);
+    }
 
     return EFI_SUCCESS;
 }
@@ -500,12 +627,12 @@ static UIntN MemMapAddEntry(CHBootInfoMemMap *MemMap, UIntN MemMapCount, UIntN B
     /* First, check if we can expand to the left (moving the base address and increasing the size), or to the right
      * (just increasing the size). */
 
-    if (MemMapCount != 0 && MemMap[MemMapCount - 1].Type == Type &&
+    if (MemMapCount && MemMap[MemMapCount - 1].Type == Type &&
         MemMap[MemMapCount - 1].Base == Base + (Count << 12)) {
         MemMap[MemMapCount - 1].Base = Base;
         MemMap[MemMapCount - 1].Count += Count;
         return MemMapCount - 1;
-    } else if (MemMapCount != 0 && MemMap[MemMapCount - 1].Type == Type &&
+    } else if (MemMapCount && MemMap[MemMapCount - 1].Type == Type &&
                MemMap[MemMapCount - 1].Base + (MemMap[MemMapCount - 1].Count << 12) == Base) {
         MemMap[MemMapCount - 1].Count += Count;
         return MemMapCount - 1;
@@ -562,7 +689,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     UInt16 feat;
     EfiFile *file;
     CHMapping *list = Null;
-    UIntN size, entry, start, end;
+    UIntN size, entry, start = UINTN_MAX, end = 0, symstart, symcnt = 0;
 
     EfiStatus status = EfiOpenFile(Entry->Path, EFI_FILE_MODE_READ, &file);
 
@@ -588,7 +715,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     file->Close(file);
 
-    if (EFI_ERROR((status = SiaLoadKernel(buf, size, &feat, &entry, &start, &end, &list)))) {
+    if (EFI_ERROR((status = SiaLoadKernel(buf, size, &feat, &entry, &start, &end, &symstart, &symcnt, &list)))) {
         EfiFreePool(buf);
         return status;
     }
@@ -618,7 +745,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     asize = (size + 0xFFF) & ~0xFFF;
 
-    if ((list = CHAddMapping(list, end, asize, CH_MEM_KDATA, &addr, True)) == Null || !addr) {
+    if ((list = CHAddMapping(list, end, asize, CH_MEM_KDATA_RO, &addr, True)) == Null || !addr) {
         EfiFreePool(buf);
         return EFI_OUT_OF_RESOURCES;
     }
@@ -667,7 +794,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     asize = (sizeof(CHBootInfoMemMap) * mcount * 2 + 0xFFF) & ~0xFFF;
 
-    if ((list = CHAddMapping(list, end, asize, CH_MEM_KDATA, &addr, True)) == Null || !addr) {
+    if ((list = CHAddMapping(list, end, asize, CH_MEM_KDATA_RO, &addr, True)) == Null || !addr) {
         EfiFreePool(map);
         return EFI_OUT_OF_RESOURCES;
     }
@@ -747,6 +874,8 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     bi->MinPhysicalAddress = minaddr;
     bi->MaxPhysicalAddress = maxaddr;
     bi->PhysicalMemorySize = maxsize;
+    bi->Symbols.Count = symcnt; 
+    bi->Symbols.Start = symcnt ? (CHBootInfoSymbol*)symstart : Null;
     bi->MemoryMap.Entries = mmapv;
     bi->BootImage.Size = size;
     bi->BootImage.Index = Entry->CHicago.ImageIndex;

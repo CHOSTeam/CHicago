@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on February 08 of 2021 at 10:29 BRT */
+ * Last edited on February 08 of 2021 at 18:10 BRT */
 
 #pragma once
 
@@ -48,6 +48,11 @@ typedef struct __attribute__((packed)) {
 } SiaData;
 
 typedef struct __attribute__((packed)) {
+    UIntN Start, End;
+    Char8 *Name;
+} CHBootInfoSymbol;
+
+typedef struct __attribute__((packed)) {
     UIntN Base, Count;
     UInt8 Type;
 } CHBootInfoMemMap;
@@ -57,6 +62,11 @@ typedef struct __attribute__((packed)) {
     UIntN KernelStart, RegionsStart, KernelEnd, EfiTempAddress,
           MinPhysicalAddress, MaxPhysicalAddress, PhysicalMemorySize;
     Void *Directory;
+
+    struct __attribute__((packed)) {
+        UIntN Count;
+        CHBootInfoSymbol *Start;
+    } Symbols;
 
     struct __attribute__((packed)) {
         UIntN Count;

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:13 BRT
- * Last edited on February 05 of 2021, at 15:12 BRT */
+ * Last edited on February 08 of 2021, at 18:31 BRT */
 
 #include <cstring>
 #include <iostream>
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
             cout << "CHicago SIA (System Image Archive) creation tool" << endl;
-            cout << "Version 1.1" << endl;
+            cout << "Version 1.2" << endl;
             return 0;
         } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             cout << "Usage: " << argv[0] << " [options]" << endl << endl;
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
                  << sizeof(sia_header_t::root_images) / sizeof(uint64_t) << ")." << endl;
             cout << "     -k | --kernel         Add a new kernel image (max amount of kernel images is "
                  << sizeof(sia_header_t::kernel_images) / sizeof(uint64_t) << ")." << endl << endl;
-            cout << "The -k|--kernel argument is on the format of <flags>:<path>. You have to OR the flags together. "
+            cout << "The -k|--kernel argument is on the format of <flags>:<path>:<symfile>."
                  << "Said flags are architecture specific. Here is a little list of kernel arch flags:" << endl;
             cout << "    x86: 0x01 (SIA_X86, indicates that this is a x86 image)." << endl
                  << "    arm64: 0x02 (SIA_ARM64, indicates that this is an arm64 image)." << endl
@@ -106,7 +106,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    /* And all the kernel images, but those are more complex, as we need to parse the flags. */
+    /* And all the kernel images, but those are more complex, as we need to parse the flags, and make sure that the
+     * user also passed the kernel symbol file. */
 
     for (string kernel : kernels) {
         if (!(kernel[0] >= '0' && kernel[0] <= '9')) {
@@ -115,14 +116,21 @@ int main(int argc, char **argv) {
         }
 
         size_t pos;
-        uint64_t flags = (uint16_t)std::stoul(kernel, &pos, 0);
+        uint64_t flags = (uint16_t)stoul(kernel, &pos, 0);
 
         if (kernel[pos] != ':') {
             cout << "Error: Expected a colon after the kernel flags." << endl;
             return false;
         }
 
-        if (!sia_add_kernel(sia, kernel.substr(pos + 1), flags)) {
+        string base = kernel.substr(pos + 1);
+
+        pos = base.find(":");
+
+        if (pos == string::npos) {
+            cout << "Error: Expected a colon after the kernel file name." << endl;
+            return false;
+        } else if (!sia_add_kernel(sia, base.substr(0, pos), base.substr(pos + 1), flags)) {
             file.close();
             return false;
         }

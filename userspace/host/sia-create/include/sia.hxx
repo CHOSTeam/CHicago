@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:20 BRT
- * Last edited on February 05 of 2021, at 15:12 BRT */
+ * Last edited on February 08 of 2021, at 18:22 BRT */
 
 #pragma once
 
@@ -53,5 +53,5 @@ struct sia_t {
 };
 
 bool sia_add_image(sia_t&, std::string);
-bool sia_add_kernel(sia_t&, std::string, uint16_t);
+bool sia_add_kernel(sia_t&, std::string, std::string, uint16_t);
 bool sia_init(sia_t&);

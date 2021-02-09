@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 15 of 2021, at 20:09 BRT
- * Last edited on February 05 of 2021 at 11:48 BRT */
+ * Last edited on February 08 of 2021 at 17:15 BRT */
 
 #include <efi/lib.h>
 
@@ -118,7 +118,9 @@ EfiPhysicalAddress EfiAllocatePages(UIntN Pages) {
 Void EfiFreePool(Void *Pool) {
     /* FreePool (and FreePages) DO return a status value, but we're going to ignore it here (for now). */
 
-    EfiBS->FreePool(Pool);
+    if (Pool != Null) {
+        EfiBS->FreePool(Pool);
+    }
 }
 
 Void EfiFreePages(EfiPhysicalAddress Start, UIntN Pages) {

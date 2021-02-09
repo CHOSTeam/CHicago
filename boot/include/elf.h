@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 30 of 2021, at 11:13 BRT
- * Last edited on February 04 of 2021 at 16:34 BRT */
+ * Last edited on February 04 of 2021 at 18:06 BRT */
 
 #pragma once
 
@@ -31,3 +31,22 @@ typedef struct __attribute__((packed)) {
 #endif
     UIntN Align;
 } ElfProgHeader;
+
+typedef struct __attribute__((packed)) {
+    UInt32 Name, Type;
+    UIntN Flags, Address, Offset, Size;
+    UInt32 Link, Info;
+    UIntN Align, EntSize;
+} ElfSectHeader;
+
+typedef struct __attribute__((packed)) {
+    UInt32 Name;
+#ifndef _WIN64
+    UInt32 Value, Size;
+#endif
+    UInt8 Info, Other;
+    UInt16 SectIndex;
+#ifdef _WIN64
+    UInt64 Value, Size;
+#endif
+} ElfSymbol;

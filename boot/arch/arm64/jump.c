@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 31 of 2021, at 13:44 BRT
- * Last edited on February 06 of 2021 at 11:16 BRT */
+ * Last edited on February 08 of 2021 at 21:46 BRT */
 
 /* Here we actually need one of the standard compiler headers, to access the offsetof function. */
 
@@ -45,8 +45,7 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo* BootInfo, UIntN A
      * EL2 we have to drop to EL1. */
 
     if ((el >> 2) == 1) {
-        asm volatile("mov sp, %0\n"
-                     "mov x29, xzr" :: "r"(sp));
+        asm volatile("mov sp, %0\n" :: "r"(sp));
     } else {
         asm volatile("msr sp_el1, %0\n"
                      "msr hcr_el2, %1\n"
@@ -58,6 +57,7 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo* BootInfo, UIntN A
     /* Finally, with everything setup correctly (and as we already already under EL1), we can call the kernel
      * entrypoint. */
 
+    asm volatile("mov x29, xzr");
     ((Void (*)(UIntN))Entry)(Arg);
 
 e:  while (True) {

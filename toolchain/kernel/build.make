@@ -1,10 +1,12 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 08 of 2021, at 11:14 BRT
+# Last edited on February 09 of 2021, at 12:45 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are, etc).
+
+NM ?= nm
 
 ifeq ($(ARCH),arm64)
     FULL_ARCH := arm64
@@ -25,11 +27,18 @@ else
 endif
 
 CXXFLAGS += -Iinclude -Iarch/$(ARCH)/include -ffreestanding -fno-rtti -fno-exceptions -fno-use-cxa-atexit \
-            -fno-stack-protector -fno-omit-frame-pointer -flto -std=c++2a
+            -fno-stack-protector -fno-omit-frame-pointer -std=c++2a -Wall -Wextra
 LDFLAGS += -nostdlib -Tarch/$(ARCH)/$(LINK_SCRIPT) -L. -zmax-page-size=4096 -n
-PRE_LIBS := $(shell $(CXX) -print-file-name=crti.o) $(shell $(CXX) -print-file-name=crtbegin.o) $(PRE_LIBS)
-LIBS += $(shell $(CXX) -print-file-name=crtend.o) $(shell $(CXX) -print-file-name=crtn.o) -lgcc
+PRE_LIBS := $(shell $(CXX) -print-file-name=crtbegin.o) $(PRE_LIBS)
+LIBS += $(shell $(CXX) -print-file-name=crtend.o)
 DEFS += -DARCH=\"$(ARCH)\"
+
+ifneq ($(ARCH),arm64)
+    PRE_LIBS := $(shell $(CXX) -print-file-name=crti.o) $(PRE_LIBS)
+    LIBS += $(shell $(CXX) -print-file-name=crtn.o)
+else
+    DEFS += -DUSE_INIT_ARRAY
+endif
 
 ifeq ($(DEBUG),true)
 CXXFLAGS += -g -Og
@@ -53,7 +62,11 @@ clean-all:
 $(OUT): $(OBJECTS) arch/$(ARCH)/$(LINK_SCRIPT) common.ld makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo LD: $@
-	$(NOECHO)$(CXX) $(LDFLAGS) -o $@ $(PRE_LIBS) $(OBJECTS) $(LIBS)
+	$(NOECHO)$(CXX) $(LDFLAGS) -o $@ $(PRE_LIBS) $(OBJECTS) $(LIBS) -lgcc
+	$(NOECHO)$(NM) -nCS $(OUT) | awk '{ if (length($$2) > 1) print; }' > $(OUT).syms.pre
+	$(NOECHO)wc -l < $(OUT).syms.pre > $(OUT).syms
+	$(NOECHO)cat $(OUT).syms.pre >> $(OUT).syms
+	$(NOECHO)rm $(OUT).syms.pre
 
 build/$(FULL_ARCH)/%.o: %.cxx makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:38 BRT
- * Last edited on February 07 of 2021, at 12:52 BRT */
+ * Last edited on February 08 of 2021, at 18:32 BRT */
 
 #include <cstring>
 #include <experimental/filesystem>
@@ -496,7 +496,7 @@ bool sia_add_image(sia_t &sia, string base) {
 	return true;
 }
 
-bool sia_add_kernel(sia_t &sia, std::string base, uint16_t flags) {
+bool sia_add_kernel(sia_t &sia, std::string base, std::string symbase, uint16_t flags) {
     /* The initial checks are simillar to the ones in sia_add_image, but we use the last_kernel_image field. */
 
     if (sia.last_kernel_image + 1 >= sizeof(sia_header_t::kernel_images) / sizeof(uint64_t)) {
@@ -504,14 +504,19 @@ bool sia_add_kernel(sia_t &sia, std::string base, uint16_t flags) {
         return false;
     }
 
-    fstream stream(base);
+    fstream stream(base), sstream(symbase);
 
     if (!stream.is_open()) {
         cout << "Error: Couldn't open the kernel file (" << base << ")." << endl;
+        sstream.close();
+        return false;
+    } else if (!sstream.is_open()) {
+        cout << "Error: Couldn't open the kernel symbol file (" << symbase << ")." << endl;
+        stream.close();
         return false;
     }
 
-    /* Get the file size and read its contents into memory. */
+    /* Get the kernel file size and read its contents into memory. */
 
     stream.seekg(0, fstream::end);
     uint64_t size = stream.tellg();
@@ -527,6 +532,23 @@ bool sia_add_kernel(sia_t &sia, std::string base, uint16_t flags) {
     }
 
     stream.close();
+
+    /* Get the symbols file size and read its contents into memory. */
+
+    sstream.seekg(0, fstream::end);
+    uint64_t ssize = sstream.tellg();
+    sstream.seekg(0);
+
+    unique_ptr<char[]> sbuf = make_unique<char[]>(ssize);
+    sstream.read(&sbuf[0], ssize);
+
+    if (sstream.fail()) {
+        cout << "Error: Couldn't read the kernel symbol file (" << symbase << ")." << endl;
+        sstream.close();
+        return false;
+    }
+
+    sstream.close();
 
     /* Now we need to create the file entry and write the kernel contents into that file. */
 
@@ -547,6 +569,29 @@ bool sia_add_kernel(sia_t &sia, std::string base, uint16_t flags) {
         return false;
     } else if (!file_write(sia.file, file, off, &buf[0], size)) {
         cout << "Error: Couldn't write to the kernel file entry." << endl;
+        return false;
+    }
+
+    /* Now create the sym file and write the contents inside it (while linking it to the kernel file). */
+
+    sia.file.seekg(0, fstream::end);
+
+    uint64_t soff;
+
+    if (!(soff = file.next = alloc_file_entry(sia.file, "oskrnl.elf.syms", 0))) {
+        cout << "Error: Couldn't write to the kernel syms file entry." << endl;
+        return false;
+    } else if (!write_bytes(sia.file, &sia.header, sizeof(sia_header_t), 0)) {
+        cout << "Error: Couldn't write to the kernel syms file entry." << endl;
+        return false;
+    } else if (!write_bytes(sia.file, &file, sizeof(sia_file_t), off)) {
+        cout << "Error: Couldn't write to the kernel syms file entry." << endl;
+        return false;
+    } else if (!read_bytes(sia.file, &file, sizeof(sia_file_t), soff)) {
+        cout << "Error: Couldn't write to the kernel syms file entry." << endl;
+        return false;
+    } else if (!file_write(sia.file, file, soff, &sbuf[0], ssize)) {
+        cout << "Error: Couldn't write to the kernel syms file entry." << endl;
         return false;
     }
 
