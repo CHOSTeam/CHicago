@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 09 of 2021 at 18:34 BRT */
+ * Last edited on February 10 of 2021 at 10:18 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -768,7 +768,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     if ((list = CHAddMapping(list, end, asize, CH_MEM_DEV, &addr, False)) == Null || !addr) {
         return EFI_OUT_OF_RESOURCES;
-    } else if ((list = CHAddMapping(list, end + asize, asize, CH_MEM_KDATA, &addr, False)) == Null || !addr) {
+    } else if ((list = CHAddMapping(list, end + asize, asize, CH_MEM_KDATA, &addr, True)) == Null || !addr) {
         return EFI_OUT_OF_RESOURCES;
     }
 
