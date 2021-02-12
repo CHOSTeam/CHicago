@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 20 of 2021, at 11:15 BRT
- * Last edited on February 07 of 2021 at 18:17 BRT */
+ * Last edited on February 11 of 2021 at 12:03 BRT */
 
 #include <efi/lib.h>
 
@@ -90,17 +90,9 @@ Void EfiGetStringMetrics(const Char8 *Data, UInt16 *Width, UInt16 *Height) {
 
     for (UIntN i = 0; Data[i]; i++) {
         switch (Data[i]) {
-        case '\n': {
-            *Height += EfiFont.Height;
-        }
-        case '\r': {
-            x = 0;
-            break;
-        }
-        default: {
-            x += EfiFont.GlyphInfo[(UInt8)Data[i]].Advance;
-            break;
-        }
+        case '\n': *Height += EfiFont.Height;
+        case '\r': x = 0; break;
+        default: x += EfiFont.GlyphInfo[(UInt8)Data[i]].Advance; break;
         }
 
         /* Thanks to the nl characters we need to make sure to only update the width if the current X is bigger than
@@ -121,13 +113,8 @@ Void EfiDrawString(const Char8 *Data, UInt16 X, UInt16 Y, UInt8 Red, UInt8 Green
 
     for (UIntN i = 0; Data[i]; i++) {
         switch (Data[i]) {
-        case '\n': {
-            Y += EfiFont.Height;
-        }
-        case '\r': {
-            X = sx;
-            break;
-        }
+        case '\n': Y += EfiFont.Height;
+        case '\r': X = sx; break;
         default: {
             EfiDrawCharacter(Data[i], X, Y, Red, Green, Blue);
             X += EfiFont.GlyphInfo[(UInt8)Data[i]].Advance;

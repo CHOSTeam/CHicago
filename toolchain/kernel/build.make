@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 10 of 2021, at 10:14 BRT
+# Last edited on February 12 of 2021, at 12:11 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are, etc).
@@ -15,19 +15,20 @@ ifeq ($(ARCH),arm64)
 else ifeq  ($(ARCH),x86)
     FULL_ARCH := x86
 	CXX := i686-elf-gcc
-	CXXFLAGS := -msse2 -mfpmath=sse
+	CXXFLAGS := -mfma -mavx2 -mfpmath=sse
 	LINK_SCRIPT := link.ld
 else ifeq ($(ARCH),amd64)
     FULL_ARCH := amd64
 	CXX := x86_64-elf-gcc
-	CXXFLAGS := -mcmodel=large -mno-red-zone -msse2 -mfpmath=sse
+	CXXFLAGS := -mcmodel=large -mno-red-zone -mfma -mavx2 -mfpmath=sse
     LINK_SCRIPT := link.ld
 else
 	$(error Invalid/unsupported architecture $(ARCH))
 endif
 
 CXXFLAGS += -Iinclude -Iarch/$(ARCH)/include -ffreestanding -fno-rtti -fno-exceptions -fno-use-cxa-atexit \
-            -fno-stack-protector -fno-omit-frame-pointer -funroll-loops -ftree-vectorize -std=c++2a -Wall -Wextra
+            -fno-stack-protector -fno-omit-frame-pointer -funroll-loops -ftree-vectorize -std=c++2a -Wall -Wextra \
+            -Wno-implicit-fallthrough
 LDFLAGS += -nostdlib -Tarch/$(ARCH)/$(LINK_SCRIPT) -L. -zmax-page-size=4096 -n
 PRE_LIBS := $(shell $(CXX) -print-file-name=crtbegin.o) $(PRE_LIBS)
 LIBS += $(shell $(CXX) -print-file-name=crtend.o)

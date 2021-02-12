@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 22:53 BRT
- * Last edited on February 07 of 2021 at 13:37 BRT */
+ * Last edited on February 12 of 2021 at 11:50 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -71,6 +71,8 @@ s:  level = (UIntN)Directory;
 EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
     if (List == Null || *List == Null || Out == Null) {
         return EFI_INVALID_PARAMETER;
+    } else if (!ArchGetFeatures(MenuEntryCHicago)) {
+        return EFI_UNSUPPORTED;
     }
 
     /* Alloc the page dir and convert it into a pointer (for MmuMap). */

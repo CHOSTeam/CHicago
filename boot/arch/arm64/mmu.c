@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 12:46 BRT
- * Last edited on February 07 of 2021 at 20:39 BRT */
+ * Last edited on February 12 of 2021 at 12:08 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -101,7 +101,7 @@ EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
     /* First, start by calling GetFeatures (so that we know if 4KiB pages are supported). */
 
     if (!ArchGetFeatures(MenuEntryCHicago)) {
-        EfiDrawString("The system MMU is not supported.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
+        EfiDrawString("The MMU doesn't support 4KiB granularity.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         return EFI_UNSUPPORTED;
     }
 

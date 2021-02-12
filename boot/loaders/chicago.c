@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 10 of 2021 at 10:18 BRT */
+ * Last edited on February 11 of 2021 at 12:01 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -824,16 +824,10 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
         }
 
         switch (desc->Type) {
-        case EfiLoaderCode:
-        case EfiLoaderData:
-        case EfiBootServicesCode:
-        case EfiBootServicesData:
-        case EfiRuntimeServicesCode:
-        case EfiRuntimeServicesData:
-        case EfiConventionalMemory: {
-            maxsize += size;
-            break;
-        }
+        case EfiLoaderCode: case EfiLoaderData:
+        case EfiBootServicesCode: case EfiBootServicesData:
+        case EfiRuntimeServicesCode: case EfiRuntimeServicesData:
+        case EfiConventionalMemory: maxsize += size; break;
         }
     }
 

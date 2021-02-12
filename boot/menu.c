@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 21 of 2021, at 14:55 BRT
- * Last edited on January 31 of 2021 at 10:51 BRT */
+ * Last edited on February 11 of 2021 at 12:01 BRT */
 
 #include <arch.h>
 #include <config.h>
@@ -129,10 +129,7 @@ s:  /* Draw the top/bottom bars and announce the boot manager name and version. 
                              0x00, 0x00, 0x00);
 
             switch(entry->Type) {
-            case MenuEntryCHicago: {
-                LdrStartCHicago(entry);
-                break;
-            }
+            case MenuEntryCHicago: LdrStartCHicago(entry); break;
             default: {
                 EfiDrawString("The entry type is invalid.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
                 break;
