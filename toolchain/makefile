@@ -1,9 +1,9 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 01 of 2020, at 13:25 BRT
-# Last edited on February 04 of 2021, at 15:56 BRT
+# Last edited on February 14 of 2021, at 18:38 BRT
 
-ARCH ?= arm64
+ARCH ?= amd64
 VERBOSE ?= false
 
 ifneq ($(VERBOSE),true)

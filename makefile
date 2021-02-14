@@ -1,9 +1,9 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 28 of 2020, at 16:05 BRT
-# Last edited on February 05 of 2021, at 15:17 BRT
+# Last edited on February 14 of 2021, at 18:37 BRT
 
-ARCH ?= arm64
+ARCH ?= amd64
 DEBUG ?= false
 VERBOSE ?= false
 
