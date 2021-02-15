@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 27 of 2021, at 12:46 BRT
- * Last edited on February 12 of 2021 at 12:08 BRT */
+ * Last edited on February 14 of 2021 at 20:44 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
@@ -137,7 +137,7 @@ EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
 
     /* Create the recursive entries. */
 
-    pd[1][510] = addr | MMU_PRESENT | MMU_TABLE | MMU_INNER_SHARE | MMU_ACCESS;
+    pd[0][511] = addr | MMU_PRESENT | MMU_TABLE | MMU_INNER_SHARE | MMU_ACCESS;
     pd[1][511] = (addr + 0x1000) | MMU_PRESENT | MMU_TABLE | MMU_INNER_SHARE | MMU_ACCESS;
 
     return EFI_SUCCESS;
