@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on February 09 of 2021 at 18:32 BRT */
+ * Last edited on February 15 of 2021 at 21:04 BRT */
 
 #pragma once
 
@@ -13,8 +13,7 @@
 /* Arch-specific file flags for the kernel. */
 
 #define SIA_X86 0x01
-#define SIA_ARM64 0x02
-#define SIA_AMD64 0x04
+#define SIA_AMD64 0x02
 
 #define CH_MEM_KCODE 0x00
 #define CH_MEM_KDATA 0x01

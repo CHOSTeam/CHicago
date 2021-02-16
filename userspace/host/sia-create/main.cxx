@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:13 BRT
- * Last edited on February 08 of 2021, at 18:31 BRT */
+ * Last edited on February 15 of 2021, at 21:04 BRT */
 
 #include <cstring>
 #include <iostream>
@@ -41,8 +41,7 @@ int main(int argc, char **argv) {
             cout << "The -k|--kernel argument is on the format of <flags>:<path>:<symfile>."
                  << "Said flags are architecture specific. Here is a little list of kernel arch flags:" << endl;
             cout << "    x86: 0x01 (SIA_X86, indicates that this is a x86 image)." << endl
-                 << "    arm64: 0x02 (SIA_ARM64, indicates that this is an arm64 image)." << endl
-                 << "    amd64: 0x04 (SIA_AMD64, indicates that this is an amd64 image)." << endl;
+                 << "    amd64: 0x02 (SIA_AMD64, indicates that this is an amd64 image)." << endl;
             return 0;
         } else if (!strcmp(argv[i], "-o") || !strcmp(argv[i], "--output")) {
             if (i + 1 >= argc) {

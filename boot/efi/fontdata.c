@@ -1,12 +1,12 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on August 06 of 2020, at 19:53 BRT
- * Last edited on January 20 of 2021 at 14:02 BRT */
+ * Last edited on February 15 of 2021 at 10:30 BRT */
 
 #include <efi/lib.h>
 
 /* The font data was extracted from the Fira Code font (https://github.com/tonsky/FiraCode)./
- * The font's license is avaliable at the root directory of both CHicago and CHicago-Kernel projects. */
+ * The font's license is available at the root directory of both CHicago and CHicago-Kernel projects. */
 
 static const UInt8 EfiFontGlyphData[] = {
     /* U+0000 */
