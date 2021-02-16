@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 01 of 2021, at 19:11 BRT
- * Last edited on January 23 of 2021 at 20:28 BRT */
+ * Last edited on February 16 of 2021 at 00:17 BRT */
 
 #pragma once
 
@@ -63,7 +63,7 @@ typedef struct {
     UInt8 Month, Day,
           Hour, Minute, Second;
     UInt8 Pad1;
-    UInt32 Nanoseconds;
+    UInt32 Nanosecond;
     Int16 Timezone;
     UInt8 Daylight;
     UInt8 Pad2;

@@ -1,10 +1,11 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 11 of 2021 at 12:01 BRT */
+ * Last edited on February 16 of 2021 at 00:21 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
+#include <efi/rng.h>
 #include <elf.h>
 
 CHMapping *CHAddMapping(CHMapping *List, EfiVirtualAddress Virtual, UIntN Size, UInt8 Type,
@@ -565,24 +566,20 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
     /* The sections all have both the virtual address (as we're supposed to jump into the kernel after enabling
      * paging) and the physical address, we need to load everything into the physical address space. */
 
-    for (UIntN i = 0; i < ehdr.ProgHeaderCount; i++) {
+    for (UIntN c = 0, i = 0; i < ehdr.ProgHeaderCount; i++) {
         /* And here we are fixing 0x1000 as the page size again lol. */
 
         EfiPhysicalAddress addr;
         ElfProgHeader *phdr = &phdrs[i];
+        UInt8 type = (phdr->Flags & 0x01) ? CH_MEM_KCODE : ((phdr->Flags & 0x02) ? CH_MEM_KDATA : CH_MEM_KDATA_RO);
         UIntN size = (phdr->MemSize + 0xFFF) & ~0xFFF;
 
         /* The size in memory and size in the file may be different, so let's clean it first, and load what we need
          * into memory after that. */
 
-        if ((*List = CHAddMapping(*List, phdr->VirtAddress, size, (phdr->Flags & 0x01) ? CH_MEM_KCODE :
-                                                                  ((phdr->Flags & 0x02) ? CH_MEM_KDATA :
-                                                                                          CH_MEM_KDATA_RO),
-                                  &addr, True)) == Null || !addr) {
+        if ((*List = CHAddMapping(*List, phdr->VirtAddress, size, type, &addr, True)) == Null || !addr) {
             return status;
-        }
-
-        if (phdr->VirtAddress < *Start) {
+        } else if (phdr->VirtAddress < *Start) {
             *Start = phdr->VirtAddress;
         }
 
@@ -596,6 +593,31 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
                                                               (UInt8*)addr)))) {
             EfiDrawString("Couldn't read one of the kernel sections.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
             return status;
+        }
+
+        /* If this is the first read-only section of the kernel, we have to setup the stack guard variable at the
+         * start. */
+
+        if (!c && type == CH_MEM_KDATA_RO) {
+            UIntN val;
+            EfiRng *rng;
+            EfiTime time;
+
+            if (EFI_ERROR(EfiBS->LocateProtocol(&EfiRngGuid, Null, (Void**)&rng)) ||
+                EFI_ERROR(rng->GetRandom(rng, Null, sizeof(UIntN), (UInt8*)&val))) {
+#ifdef _WIN64
+                val = 0x595E9FBD94FDA766;
+#else
+                val = 0xE2DEE396;
+#endif
+
+                if (!EFI_ERROR(EfiRS->GetTime(&time, Null))) {
+                    val *= ((time.Year * 0x1DA9C00) + (time.Month * 0x278D00) + (time.Day * 0x15180) +
+                            (time.Hour * 0xE10) + (time.Minute * 0x3C) + time.Second + time.Nanosecond) * 0x1337;
+                }
+            }
+
+            *((UIntN*)addr) = val;
         }
     }
 

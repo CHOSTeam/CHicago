@@ -1,10 +1,11 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 17:29 BRT
- * Last edited on January 23 of 2021 at 20:33 BRT */
+ * Last edited on February 15 of 2021 at 23:54 BRT */
 
 #include <efi/gop.h>
 #include <efi/loaded_image.h>
+#include <efi/rng.h>
 
 /* ImageHandle and SystemTable are passed to the entry function, and redirected to us, RuntimeServices, BootServices and
  * ConfigTables are the ->RS, ->BS and ->CS fields from the SystemTable. */
@@ -37,6 +38,7 @@ EfiGuid EfiFileSystemInfoGuid = EFI_FILE_SYSTEM_INFO_GUID;
 EfiGuid EfiFileSystemLabelGuid = EFI_FILE_SYSTEM_LABEL_GUID;
 EfiGuid EfiGraphicsOutputGuid = EFI_GRAPHICS_OUTPUT_GUID;
 EfiGuid EfiLoadedImageGuid = EFI_LOADED_IMAGE_GUID;
+EfiGuid EfiRngGuid = EFI_RNG_GUID;
 
 EfiStatus EfiInitLib(EfiHandle IH, const EfiSystemTable *ST, Boolean DisableWatchdog) {
     EfiIH = IH;

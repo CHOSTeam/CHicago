@@ -41,6 +41,7 @@ extern EfiGuid EfiFileSystemInfoGuid;
 extern EfiGuid EfiFileSystemLabelGuid;
 extern EfiGuid EfiGraphicsOutputGuid;
 extern EfiGuid EfiLoadedImageGuid;
+extern EfiGuid EfiRngGuid;
 
 extern const EfiFontData EfiFont;
 

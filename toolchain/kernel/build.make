@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 15 of 2021, at 21:01 BRT
+# Last edited on February 16 of 2021, at 00:26 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are, etc).
@@ -23,7 +23,7 @@ else
 endif
 
 CXXFLAGS += -Iinclude -Iarch/$(ARCH)/include -ffreestanding -fno-rtti -fno-exceptions -fno-use-cxa-atexit \
-            -fno-stack-protector -fno-omit-frame-pointer -funroll-loops -ftree-vectorize -std=c++2a -Wall \
+            -fstack-protector-all -fno-omit-frame-pointer -funroll-loops -ftree-vectorize -std=c++2a -Wall \
             -Wextra -Wno-implicit-fallthrough
 LDFLAGS += -nostdlib -Tarch/$(ARCH)/$(LINK_SCRIPT) -L. -zmax-page-size=4096 -n
 PRE_LIBS := $(shell $(CXX) -print-file-name=crtbegin.o) $(PRE_LIBS)
