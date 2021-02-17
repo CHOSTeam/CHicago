@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 16 of 2021 at 00:21 BRT */
+ * Last edited on February 16 of 2021 at 10:08 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -835,7 +835,14 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
         EfiMemoryDescriptor *desc = (EfiMemoryDescriptor*)((UIntN)map + i * dsize);
         UIntN base = (UIntN)desc->PhysicalStart, size = (UIntN)desc->NumberOfPages << 12;
 
-        /* Make sure to save the highest (and lowest) physical address + the actual memory size. */
+        /* Make sure to save the highest (and lowest) physical address + the actual memory size (and skip entries that
+         * go beyond UINTN_MAX, like PAE entries on x86, as we don't support those yet). */
+
+        if (desc->PhysicalStart > UINTN_MAX) {
+            continue;
+        } else if (desc->PhysicalStart + size > UINTN_MAX) {
+            size = UINTN_MAX - base;
+        }
 
         if (base < minaddr) {
             minaddr = base;
@@ -927,15 +934,17 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
         EfiMemoryDescriptor *desc = (EfiMemoryDescriptor*)((UIntN)map + i * dsize);
         UIntN base = (UIntN)desc->PhysicalStart, count = (UIntN)desc->NumberOfPages;
 
-        /* Any time (after the first entry) that we encounter a Null/base==0 entry, we can assume that the memmap is
-         * over, or that something is probably very wrong.
-         * In this first part of the function, other then that check, let's see if it's some reserved or free section
+        /* In this first part of the function, other then some checks, let's see if it's some reserved or free section
          * that will NOT have the kernel in it (and that we don't need any special handling). If it is, let's go and
          * add it to the kernel memmap. */
 
-        if (i && !base) {
-            break;
-        } else if (MemMapIsReserved(desc->Type)) {
+        if (desc->PhysicalStart > UINTN_MAX) {
+            continue;
+        } else if (desc->PhysicalStart + (desc->NumberOfPages << 12) > UINTN_MAX) {
+            count = (UINTN_MAX - base) >> 12;
+        }
+
+        if (MemMapIsReserved(desc->Type)) {
             MemMapAddNormal(CH_MEM_RES, mmap, &mmapc, (UIntN)map, mcount, dsize, &i, MemMapIsReserved);
             continue;
         } else if (MemMapIsFree(desc->Type)) {

@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 01 of 2021, at 15:13 BRT
-# Last edited on February 07 of 2021, at 17:26 BRT
+# Last edited on February 17 of 2021, at 10:37 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are, etc).
@@ -36,8 +36,8 @@ else
 CFLAGS += -O3
 endif
 
-OBJECTS := $(addprefix build/$(ARCH)/arch/,$(filter %.o, $(ARCH_SOURCES:%.c=%.o) $(ARCH_SOURCES:%.S=%.o))) \
-		   $(addprefix build/$(ARCH)/,$(filter %.o, $(SOURCES:%.c=%.o)))
+OBJECTS := $(addprefix build/$(ARCH)/arch/,$(addsuffix .o,$(ARCH_SOURCES))) \
+           $(addprefix build/$(ARCH)/,$(addsuffix .o,$(SOURCES)))
 DEPS := $(OBJECTS:.o=.d)
 
 build: $(OUT)
@@ -53,17 +53,17 @@ $(OUT): $(OBJECTS) makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)echo LD: $@
 	$(NOECHO)$(LD) $(LDFLAGS) -out:$@ $(OBJECTS) $(LIBS)
 
-build/$(ARCH)/%.o: %.c makefile $(TOOLCHAIN_DIR)/build.make
+build/$(ARCH)/%.c.o: %.c makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo CC: $<
 	$(NOECHO)$(CC) $(CFLAGS) $(DEFS) -c -MMD -o $@ $<
 
-build/$(ARCH)/arch/%.o: arch/$(ARCH)/%.c makefile $(TOOLCHAIN_DIR)/build.make
+build/$(ARCH)/arch/%.c.o: arch/$(ARCH)/%.c makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo CC: $<
 	$(NOECHO)$(CC) $(CFLAGS) $(DEFS) -c -MMD -o $@ $<
 
-build/$(ARCH)/arch/%.o: arch/$(ARCH)/%.S makefile $(TOOLCHAIN_DIR)/build.make
+build/$(ARCH)/arch/%.S.o: arch/$(ARCH)/%.S makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo AS: $<
 	$(NOECHO)$(CC) $(CFLAGS) $(DEFS) -c -MMD -o $@ $<

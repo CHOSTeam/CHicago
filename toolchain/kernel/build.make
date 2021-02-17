@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 16 of 2021, at 00:26 BRT
+# Last edited on February 17 of 2021, at 10:10 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are, etc).
@@ -44,8 +44,8 @@ else
 CXXFLAGS += -O3
 endif
 
-OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/,$(filter %.o, $(ARCH_SOURCES:%.cxx=%.o) $(ARCH_SOURCES:%.S=%.o))) \
-           $(addprefix build/$(FULL_ARCH)/,$(filter %.o, $(SOURCES:%.cxx=%.o)))
+OBJECTS := $(addprefix build/$(FULL_ARCH)/arch/,$(addsuffix .o,$(ARCH_SOURCES))) \
+           $(addprefix build/$(FULL_ARCH)/,$(addsuffix .o,$(SOURCES)))
 DEPS := $(OBJECTS:.o=.d)
 
 build: $(OUT)
@@ -65,17 +65,17 @@ $(OUT): $(OBJECTS) arch/$(ARCH)/$(LINK_SCRIPT) common.ld makefile $(TOOLCHAIN_DI
 	$(NOECHO)cat $(OUT).syms.pre >> $(OUT).syms
 	$(NOECHO)rm $(OUT).syms.pre
 
-build/$(FULL_ARCH)/%.o: %.cxx makefile $(TOOLCHAIN_DIR)/build.make
+build/$(FULL_ARCH)/%.cxx.o: %.cxx makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo CXX: $<
 	$(NOECHO)$(CXX) $(CXXFLAGS) $(DEFS) -c -MMD -o $@ $<
 
-build/$(FULL_ARCH)/arch/%.o: arch/$(ARCH)/%.cxx makefile $(TOOLCHAIN_DIR)/build.make
+build/$(FULL_ARCH)/arch/%.cxx.o: arch/$(ARCH)/%.cxx makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo CXX: $<
 	$(NOECHO)$(CXX) $(CXXFLAGS) $(DEFS) -c -MMD -o $@ $<
 
-build/$(FULL_ARCH)/arch/%.o: arch/$(ARCH)/%.S makefile $(TOOLCHAIN_DIR)/build.make
+build/$(FULL_ARCH)/arch/%.S.o: arch/$(ARCH)/%.S makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo AS: $<
 	$(NOECHO)$(CXX) $(CXXFLAGS) $(DEFS) -c -MMD -o $@ $<
