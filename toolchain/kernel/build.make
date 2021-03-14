@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on January 26 of 2021, at 20:21 BRT
-# Last edited on February 19 of 2021, at 14:04 BRT
+# Last edited on March 06 of 2021, at 21:46 BRT
 
 # We expect all the required variables to be set by whoever included us (PATH already set, TOOLCHAIN_DIR pointing to
 # where we are, etc).
@@ -13,12 +13,18 @@ ifeq  ($(ARCH),x86)
     # we need.
 
     FULL_ARCH := x86
+    
     CXX := i686-elf-gcc
+    AR := i686-elf-gcc-ar
+    
     CXXFLAGS := -march=haswell
     LINK_SCRIPT := link.ld
 else ifeq ($(ARCH),amd64)
     FULL_ARCH := amd64
+    
     CXX := x86_64-elf-gcc
+    AR := x86_64-elf-gcc-ar
+    
     CXXFLAGS := -mcmodel=large -mno-red-zone -march=haswell
     LINK_SCRIPT := link.ld
 else
@@ -27,21 +33,26 @@ endif
 
 CXXFLAGS += -Iinclude -Iarch/$(ARCH)/include -ffreestanding -fno-rtti -fno-exceptions -fno-use-cxa-atexit \
             -fstack-protector-all -fno-omit-frame-pointer -funroll-loops -ftree-vectorize -flax-vector-conversions \
-            -std=c++2a -Wall -Wextra -Wno-implicit-fallthrough -O3
+            -std=c++20 -Wall -Wextra -Wno-implicit-fallthrough -O3
 LDFLAGS += -nostdlib -Tarch/$(ARCH)/$(LINK_SCRIPT) -L. -zmax-page-size=4096 -n
-PRE_LIBS := $(shell $(CXX) -print-file-name=crtbegin.o) $(PRE_LIBS)
-LIBS += $(shell $(CXX) -print-file-name=crtend.o)
 DEFS += -DARCH=\"$(ARCH)\"
 
-ifneq (true,false)
-    PRE_LIBS := $(shell $(CXX) -print-file-name=crti.o) $(PRE_LIBS)
-    LIBS += $(shell $(CXX) -print-file-name=crtn.o)
-else
-    DEFS += -DUSE_INIT_ARRAY
+ifneq ($(TYPE),lib)
+    LIBS += $(shell $(CXX) -print-file-name=crtend.o) ../lib/build/$(FULL_ARCH)/libkernel.a
+    CXXFLAGS := -I../lib/include -I../lib/arch/$(ARCH)/include $(CXXFLAGS)
+    PRE_LIBS := $(shell $(CXX) -print-file-name=crtbegin.o) $(PRE_LIBS)
+    DEFS += -DKERNEL
+
+    ifneq (true,false)
+        PRE_LIBS := $(shell $(CXX) -print-file-name=crti.o) $(PRE_LIBS)
+        LIBS += $(shell $(CXX) -print-file-name=crtn.o)
+    else
+        DEFS += -DUSE_INIT_ARRAY
+    endif
 endif
 
 ifeq ($(DEBUG),true)
-CXXFLAGS += -g -fsanitize=undefined
+CXXFLAGS += -fsanitize=undefined
 DEFS += -DDEBUG
 endif
 
@@ -57,14 +68,25 @@ clean:
 clean-all:
 	$(NOECHO)rm -rf build
 
-$(OUT): $(OBJECTS) arch/$(ARCH)/$(LINK_SCRIPT) common.ld makefile $(TOOLCHAIN_DIR)/build.make
+ifeq ($(TYPE),lib)
+$(OUT): $(OBJECTS) makefile $(TOOLCHAIN_DIR)/build.make
+	$(NOECHO)mkdir -p $(dir $@)
+	$(NOECHO)echo AR: $@
+	$(NOECHO)$(AR) -crs $(OUT) $(OBJECTS)
+else
+$(OUT): $(OBJECTS) ../lib/build/$(ARCH)/libkernel.a arch/$(ARCH)/$(LINK_SCRIPT) common.ld makefile \
+        $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)
 	$(NOECHO)echo LD: $@
 	$(NOECHO)$(CXX) $(LDFLAGS) -o $@ $(PRE_LIBS) $(OBJECTS) $(LIBS) -lgcc
-	$(NOECHO)$(NM) -nCS $(OUT) | awk '{ if (length($$2) > 1) print; }' > $(OUT).syms.pre
+	$(NOECHO)$(NM) -nCS --defined $(OUT) | awk '{ if (length($$2) > 1 && $$3 != "b" && $$3 != "B" && \
+	                                                  $$3 != "d" && $$3 != "D" && $$3 != "g" && $$3 != "G" && \
+	                                                  $$3 != "r" && $$3 != "R" && $$3 != "s" && $$3 != "S") print; }' \
+	                                     > $(OUT).syms.pre
 	$(NOECHO)wc -l < $(OUT).syms.pre > $(OUT).syms
 	$(NOECHO)cat $(OUT).syms.pre >> $(OUT).syms
 	$(NOECHO)rm $(OUT).syms.pre
+endif
 
 build/$(FULL_ARCH)/%.cxx.o: %.cxx makefile $(TOOLCHAIN_DIR)/build.make
 	$(NOECHO)mkdir -p $(dir $@)

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 15 of 2021, at 20:09 BRT
- * Last edited on February 08 of 2021 at 17:15 BRT */
+ * Last edited on March 11 of 2021 at 17:43 BRT */
 
 #include <efi/lib.h>
 
@@ -64,6 +64,18 @@ Void *EfiCopyMemory(Void *Dest, const Void *Source, UIntN Size) {
     }
 
     return Dest;
+}
+
+Boolean EfiCompareMemory(const Void *Buf1, const Void *Buf2, UIntN Size) {
+    const UInt8 *buf1 = Buf1, *buf2 = Buf2;
+
+    while (Size--) {
+        if (*buf1++ != *buf2++) {
+            return False;
+        }
+    }
+
+    return True;
 }
 
 Void *EfiAllocatePool(UIntN Size) {

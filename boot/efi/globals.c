@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 17:29 BRT
- * Last edited on February 15 of 2021 at 23:54 BRT */
+ * Last edited on March 11 of 2021 at 17:29 BRT */
 
 #include <efi/gop.h>
 #include <efi/loaded_image.h>
@@ -39,6 +39,8 @@ EfiGuid EfiFileSystemLabelGuid = EFI_FILE_SYSTEM_LABEL_GUID;
 EfiGuid EfiGraphicsOutputGuid = EFI_GRAPHICS_OUTPUT_GUID;
 EfiGuid EfiLoadedImageGuid = EFI_LOADED_IMAGE_GUID;
 EfiGuid EfiRngGuid = EFI_RNG_GUID;
+EfiGuid EfiAcpi10TableGuid = EFI_ACPI_10_TABLE_GUID;
+EfiGuid EfiAcpi20TableGuid = EFI_ACPI_20_TABLE_GUID;
 
 EfiStatus EfiInitLib(EfiHandle IH, const EfiSystemTable *ST, Boolean DisableWatchdog) {
     EfiIH = IH;

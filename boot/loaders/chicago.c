@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on February 16 of 2021 at 10:08 BRT */
+ * Last edited on March 14 of 2021 at 11:30 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -796,6 +796,16 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     end += asize * 2;
 
+    /* Get and the ACPI tables location (EfiGetAcpiTables return the start of the RSDT/XSDT). */
+
+    Boolean xsdt;
+    UIntN sdt = (EfiPhysicalAddress)EfiGetAcpiTables(&xsdt);
+
+    if (!sdt) {
+        EfiDrawString("Couldn't get the ACPI RDST/XSDT.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
+        return EFI_UNSUPPORTED;
+    }
+
     /* Allocate space for the memory map, so that the kernel knows which PHYSICAL memory regions are free. For getting
      * the EFI memory map, we need to call EfiGetMemoryMap (duh). */
 
@@ -899,6 +909,9 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     bi->MinPhysicalAddress = minaddr;
     bi->MaxPhysicalAddress = maxaddr;
     bi->PhysicalMemorySize = maxsize;
+    bi->Acpi.Extended = xsdt;
+    bi->Acpi.Size = ((UInt32*)sdt)[1];
+    bi->Acpi.Sdt = sdt;
     bi->Symbols.Count = symcnt; 
     bi->Symbols.Start = symcnt ? (CHBootInfoSymbol*)symstart : Null;
     bi->MemoryMap.Entries = mmapv;

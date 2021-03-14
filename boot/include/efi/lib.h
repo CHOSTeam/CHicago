@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 17:31 BRT
- * Last edited on February 07 of 2021 at 18:40 BRT */
+ * Last edited on March 11 of 2021 at 18:31 BRT */
 
 #pragma once
 
@@ -42,6 +42,8 @@ extern EfiGuid EfiFileSystemLabelGuid;
 extern EfiGuid EfiGraphicsOutputGuid;
 extern EfiGuid EfiLoadedImageGuid;
 extern EfiGuid EfiRngGuid;
+extern EfiGuid EfiAcpi10TableGuid;
+extern EfiGuid EfiAcpi20TableGuid;
 
 extern const EfiFontData EfiFont;
 
@@ -68,6 +70,7 @@ Void *EfiSetMemory32(Void*, UIntN, UInt32);
 Void *EfiSetMemory64(Void*, UIntN, UInt64);
 Void *EfiZeroMemory(Void*, UIntN);
 Void *EfiCopyMemory(Void*, const Void*, UIntN);
+Boolean EfiCompareMemory(const Void*, const Void*, UIntN);
 
 Void *EfiAllocatePool(UIntN);
 Void *EfiAllocateZeroPool(UIntN);
@@ -81,3 +84,5 @@ EfiMemoryDescriptor *EfiGetMemoryMap(UIntN*, UIntN*, UIntN*, UInt32*);
 
 EfiStatus EfiOpenFile(Char16*, UInt8, EfiFile**);
 UIntN EfiGetFileSize(EfiFile*);
+
+const Void *EfiGetAcpiTables(Boolean*);
