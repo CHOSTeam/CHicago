@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 20 of 2021, at 11:15 BRT
- * Last edited on February 11 of 2021 at 12:03 BRT */
+ * Last edited on July 06 of 2021 at 20:09 BRT */
 
 #include <efi/lib.h>
 
@@ -9,11 +9,11 @@ static Int32 EfiRound(float Value) {
     /* Dummy/unoptimized round function, if we add/subtract 0.5 from the value, and truncate, we gonna get the nearest
      * integer. */
 
-    return (Int32)(Value < 0 ? Value - 0.5f : Value + 0.5f);
+    return Value < 0 ? Value - 0.5f : Value + 0.5f;
 }
 
 static UInt32 EfiBlendAlpha(UInt32 Background, UInt8 Red, UInt8 Green, UInt8 Blue, float Alpha) {
-    UInt8 r, g, b;
+    float r, g, b;
 
     /* Same alpha blending that we use on the kernel include/img.hxx. */
 
@@ -29,9 +29,9 @@ static UInt32 EfiBlendAlpha(UInt32 Background, UInt8 Red, UInt8 Green, UInt8 Blu
 #error Invalid byte order (expected little endian or big endian)
 #endif
 
-    Red = (UInt8)EfiRound((Alpha * Red) + ((1.f - Alpha) * r));
-    Green = (UInt8)EfiRound((Alpha * Green) + ((1.f - Alpha) * g));
-    Blue = (UInt8)EfiRound((Alpha * Blue) + ((1.f - Alpha) * b));
+    Red = (UInt8)EfiRound((Alpha * (float)Red) + ((1.f - Alpha) * r));
+    Green = (UInt8)EfiRound((Alpha * (float)Green) + ((1.f - Alpha) * g));
+    Blue = (UInt8)EfiRound((Alpha * (float)Blue) + ((1.f - Alpha) * b));
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     return 0xFF000000 | (Red << 16) | (Green << 8) | Blue;
@@ -43,9 +43,7 @@ static UInt32 EfiBlendAlpha(UInt32 Background, UInt8 Red, UInt8 Green, UInt8 Blu
 }
 
 Void EfiDrawCharacter(Char8 Data, UInt16 X, UInt16 Y, UInt8 Red, UInt8 Green, UInt8 Blue) {
-    if (X >= EfiGop->Mode->Info->Width || Y >= EfiGop->Mode->Info->Height) {
-        return;
-    }
+    if (X >= EfiGop->Mode->Info->Width || Y >= EfiGop->Mode->Info->Height) return;
 
     const EfiFontGlyph *info = &EfiFont.GlyphInfo[(UInt8)Data];
     const UInt8 *data = &EfiFont.GlyphData[info->Offset];
@@ -57,21 +55,13 @@ Void EfiDrawCharacter(Char8 Data, UInt16 X, UInt16 Y, UInt8 Red, UInt8 Green, UI
      * vid/image.cxx. */
 
     for (Int32 y = 0; y < info->Height; y++) {
-        if (Y + gy + y >= EfiGop->Mode->Info->Height) {
-            break;
-        }
+        if (Y + gy + y >= EfiGop->Mode->Info->Height) break;
     
         for (Int32 x = 0; x < info->Width; x++) {
-            if (X + gx + x >= EfiGop->Mode->Info->Width) {
-                break;
-            }
-
+            if (X + gx + x >= EfiGop->Mode->Info->Width) break;
             UInt8 bright = data[y * info->Width + x];
             UInt32 *pos = &start[y * EfiGop->Mode->Info->PixelsPerScanLine + x];
-
-            if (bright) {
-                *pos = EfiBlendAlpha(*pos, Red, Green, Blue, (float)bright / 255);
-            }
+            if (bright) *pos = EfiBlendAlpha(*pos, Red, Green, Blue, (float)bright / 255);
         }
     }
 }
@@ -98,9 +88,7 @@ Void EfiGetStringMetrics(const Char8 *Data, UInt16 *Width, UInt16 *Height) {
         /* Thanks to the nl characters we need to make sure to only update the width if the current X is bigger than
          * the highest x. */
 
-        if (x > *Width) {
-            *Width = x;
-        }
+        if (x > *Width) *Width = x;
     }
 }
 
@@ -115,11 +103,10 @@ Void EfiDrawString(const Char8 *Data, UInt16 X, UInt16 Y, UInt8 Red, UInt8 Green
         switch (Data[i]) {
         case '\n': Y += EfiFont.Height;
         case '\r': X = sx; break;
-        default: {
+        default:
             EfiDrawCharacter(Data[i], X, Y, Red, Green, Blue);
             X += EfiFont.GlyphInfo[(UInt8)Data[i]].Advance;
             break;
-        }
         }
     }
 }

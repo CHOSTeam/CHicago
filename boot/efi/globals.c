@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 17:29 BRT
- * Last edited on March 11 of 2021 at 17:29 BRT */
+ * Last edited on June 06 of 2021 at 11:16 BRT */
 
 #include <efi/gop.h>
 #include <efi/loaded_image.h>
@@ -57,9 +57,7 @@ EfiStatus EfiInitLib(EfiHandle IH, const EfiSystemTable *ST, Boolean DisableWatc
      * watchdog (so that it has all the time in the world to load everything up), so let's do that (if we were asked
      * to). */
     
-    if (DisableWatchdog) {
-        EfiBS->SetWatchdogTimer(0, 0, 0, Null);
-    }
+    if (DisableWatchdog) EfiBS->SetWatchdogTimer(0, 0, 0, Null);
     
     return EfiBS->LocateProtocol(&EfiGraphicsOutputGuid, Null, (Void**)&EfiGop);
 }

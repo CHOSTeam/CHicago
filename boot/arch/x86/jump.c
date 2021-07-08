@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 31 of 2021, at 13:45 BRT
- * Last edited on February 11 of 2021 at 12:18 BRT */
+ * Last edited on July 06 of 2021 at 20:07 BRT */
 
 #include <arch.h>
 #include <stddef.h>
@@ -19,9 +19,7 @@ static inline Void WriteMSR(UInt32 Number, UInt64 Value) {
 #endif
 
 __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN Arg, UIntN Entry, UInt16) {
-    if (BootInfo == Null) {
-        goto e;
-    }
+    if (BootInfo == Null) goto e;
 
     /* Initialize the FPU (SSE+AVX2) support. */
 
@@ -57,9 +55,7 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
                      "mov %cr4, %ebx; btr $5, %ebx; mov %ebx, %cr4");
     }
 
-    if (sp + 4 > Arg + offsetof(CHBootInfo, KernelStack) + sizeof(BootInfo->KernelStack)) {
-        sp -= 0x10;
-    }
+    if (sp + 4 > Arg + offsetof(CHBootInfo, KernelStack) + sizeof(BootInfo->KernelStack)) sp -= 0x10;
 
     asm volatile("mov %0, %%ebx; mov %1, %%ecx; mov %2, %%edx; mov %3, %%cr3\n"
                  "mov %%cr4, %%eax; or $0x10, %%eax; mov %%eax, %%cr4\n"
@@ -78,7 +74,5 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
                  "call *%%rbx" :: "r"(Entry), "r"(Arg), "r"(sp), "r"(BootInfo->Directory) : "%rbx", "%rdi", "%rsi");
 #endif
 
-e:  while (True) {
-        asm volatile("hlt");
-    }
+e:  while (True) asm volatile("hlt");
 }

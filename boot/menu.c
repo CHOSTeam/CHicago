@@ -1,14 +1,14 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 21 of 2021, at 14:55 BRT
- * Last edited on February 11 of 2021 at 12:01 BRT */
+ * Last edited on July 08 of 2021 at 08:49 BRT */
 
 #include <arch.h>
 #include <config.h>
 #include <efi/lib.h>
 #include <loader.h>
 
-static const Char8 *MenuName = "CHicago Boot Manager", *MenuVersion = "Version next-4";
+static const Char8 *MenuName = "CHicago Boot Manager", *MenuVersion = "Version next-5";
 static UIntN MenuEntryMax = 0, MenuEntryCount = 0;
 static MenuEntry **MenuEntries = Null;
 
@@ -26,14 +26,14 @@ static Void MenuDrawDecoration(UIntN Reserved, UIntN NameWidth, UIntN VerWidth) 
 static MenuEntry *MenuAddEntry(const Char8 *Name, const Char16 *Path, MenuEntryType Type) {
     /* Adding a new entry is easy: Allocate the entry struct (and fill it), expand the entry array (if required), save
      * entry into the right array index, increase the entry count, and we're done!
-     * TODO: Maybe return a status code? It could be useful to at least inform the user when some entry fails to load. */
+     * TODO: Maybe return a status code? It could be useful to at least inform the user when some entry fails to
+     * load. */
 
     MenuEntry *entry = EfiAllocatePool(sizeof(MenuEntry)), **new;
     UIntN cur = MenuEntryMax * sizeof(MenuEntry*), newc = cur ? cur * 2 : sizeof(MenuEntry*);
 
-    if (entry == Null) {
-        return Null;
-    } else if ((entry->Name = EfiDuplicateString8(Name)) == Null) {
+    if (entry == Null) return Null;
+    else if ((entry->Name = EfiDuplicateString8(Name)) == Null) {
         EfiFreePool(entry);
         return Null;
     } else if ((entry->Path = EfiDuplicateString16(Path)) == Null) {
@@ -58,10 +58,7 @@ static MenuEntry *MenuAddEntry(const Char8 *Name, const Char16 *Path, MenuEntryT
 
 Void MenuAddCHicagoEntry(const Char8 *Name, const Char16 *Path, UIntN ImageIndex) {
     MenuEntry *entry = MenuAddEntry(Name, Path, MenuEntryCHicago);
-
-    if (entry != Null) {
-        entry->CHicago.ImageIndex = ImageIndex;
-    }
+    if (entry != Null) entry->CHicago.ImageIndex = ImageIndex;
 }
 
 Void MenuStart(Void) {
@@ -116,11 +113,9 @@ s:  /* Draw the top/bottom bars and announce the boot manager name and version. 
 
         /* Maybe we should use macros (or an enum) for the scan codes, instead of hardcoding? */
 
-        if (key.ScanCode == 0x01 && sel > 0) {
-            sel--;
-        } else if (key.ScanCode == 0x02 && (UIntN)(sel + 1) < MenuEntryCount) {
-            sel++;
-        } else if (key.Unicode == '\r') {
+        if (key.ScanCode == 0x01 && sel > 0) sel--;
+        else if (key.ScanCode == 0x02 && (UIntN)(sel + 1) < MenuEntryCount) sel++;
+        else if (key.Unicode == '\r') {
             /* Enter means that we should boot this entry... LET'S GO! */
         
             MenuEntry *entry = MenuEntries[sel];
@@ -130,10 +125,7 @@ s:  /* Draw the top/bottom bars and announce the boot manager name and version. 
 
             switch(entry->Type) {
             case MenuEntryCHicago: LdrStartCHicago(entry); break;
-            default: {
-                EfiDrawString("The entry type is invalid.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
-                break;
-            }
+            default: EfiDrawString("The entry type is invalid.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF); break;
             }
 
             return;

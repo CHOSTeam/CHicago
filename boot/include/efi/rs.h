@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 01 of 2021, at 19:11 BRT
- * Last edited on February 16 of 2021 at 00:17 BRT */
+ * Last edited on June 06 of 2021 at 11:23 BRT */
 
 #pragma once
 
@@ -154,7 +154,7 @@ typedef struct {
     _EfiUpdateCapsule UpdateCapsule;
     _EfiQueryCapsuleCapabilities QueryCapsuleCapabilities;
 
-    /* At last, UEFI 2.0 miscellanous services. */
+    /* At last, UEFI 2.0 miscellaneous services. */
 
     _EfiQueryVariableInfo QueryVariableInfo;
 } EfiRuntimeServices;

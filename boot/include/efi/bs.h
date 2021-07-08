@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 15:09 BRT
- * Last edited on January 31 of 2021 at 12:02 BRT */
+ * Last edited on June 06 of 2021 at 11:24 BRT */
 
 #pragma once
 
@@ -175,7 +175,7 @@ typedef struct {
     _EfiImageUnload UnloadImage;
     _EfiExitBootServices ExitBootServices;
 
-    /* Miscellanous services. */
+    /* Miscellaneous services. */
 
     _EfiGetNextMonotonicCount GetNextMonotonicCount;
     _EfiStall Stall;

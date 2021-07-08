@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on December 30 of 2020, at 15:07 BRT
-# Last edited on March 06 of 2021, at 13:36 BRT
+# Last edited on July 05 of 2021, at 15:17 BRT
 
 VERBOSE ?= false
 
@@ -10,7 +10,7 @@ OUT_DIR := $(ROOT_DIR)/out
 SOURCE_DIR := $(ROOT_DIR)/../../build
 PATH := $(OUT_DIR)/bin:$(PATH)
 SHELL := env PATH=$(PATH) /bin/bash
-NPROC := $(shell expr $(shell nproc) \+ 2)
+NPROC := $(shell expr $(shell nproc) \* 2 \+ 1)
 
 # Instead of downloading/using the .tar files, we're directly cloning the source repo, and using the latest commit
 # (which is probably unstable, and would probably be a better idea to use a stable branch, but whatever).
@@ -23,8 +23,23 @@ ifneq ($(VERBOSE),true)
 NOECHO := @
 endif
 
-build: prepare
-ifeq (,$(wildcard $(OUT_DIR)/i686-elf))
+$(OUT_DIR)/bin/i686-elf-gcc: $(OUT_DIR)/i686-elf
+	$(NOECHO)$(OUT_DIR)/bin/i686-elf-gcc -c -o \
+			 $(shell dirname `$(OUT_DIR)/bin/i686-elf-gcc -print-libgcc-file-name`)/crti.o crti.S
+	$(NOECHO)$(OUT_DIR)/bin/i686-elf-gcc -c -o \
+			 $(shell dirname `$(OUT_DIR)/bin/i686-elf-gcc -print-libgcc-file-name`)/crtn.o crtn.S
+
+$(OUT_DIR)/i686-elf:
+ifeq (,$(wildcard $(SOURCE_DIR)/binutils))
+	$(NOECHO)mkdir -p $(SOURCE_DIR)
+	$(NOECHO)echo Cloning the Binutils repo
+	$(NOECHO)$(GIT_CMD) $(BINUTILS_REPO) $(SOURCE_DIR)/binutils 1>/dev/null 2>&1
+endif
+ifeq (,$(wildcard $(SOURCE_DIR)/gcc))
+	$(NOECHO)mkdir -p $(SOURCE_DIR)
+	$(NOECHO)echo Cloning the GCC repo
+	$(NOECHO)$(GIT_CMD) $(GCC_REPO) $(SOURCE_DIR)/gcc 1>/dev/null 2>&1
+endif
 	$(NOECHO)echo "Building Binutils"
 	$(NOECHO)rm -rf $(SOURCE_DIR)/binutils/build && mkdir $(SOURCE_DIR)/binutils/build
 	$(NOECHO)cd $(SOURCE_DIR)/binutils/build && \
@@ -40,28 +55,6 @@ ifeq (,$(wildcard $(OUT_DIR)/i686-elf))
 	$(NOECHO)make -C $(SOURCE_DIR)/gcc/build -j$(NPROC) all-gcc all-c++tools all-target-libgcc 1>/dev/null 2>&1
 	$(NOECHO)make -C $(SOURCE_DIR)/gcc/build -j$(NPROC) install-gcc install-c++tools install-target-libgcc \
 	         1>/dev/null 2>&1
-	$(NOECHO)$(OUT_DIR)/bin/i686-elf-gcc -c -o \
-			 $(dirname `$(OUT_DIR)/bin/i686-elf-gcc -print-libgcc-file-name`)/crti.o crti.S
-	$(NOECHO)$(OUT_DIR)/bin/i686-elf-gcc -c -o \
-				 $(dirname `$(OUT_DIR)/bin/i686-elf-gcc -print-libgcc-file-name`)/crtn.o crtn.S
-	$(NOECHO)ln -s $(OUT_DIR)/libexec/gcc/i686-elf/*/g++-mapper-server $(OUT_DIR)/bin/i686-elf-g++-mapper-server
-endif
-
-prepare:
-ifeq (,$(wildcard $(OUT_DIR)/i686-elf))
-ifeq (,$(wildcard $(SOURCE_DIR)/binutils))
-	$(NOECHO)mkdir -p $(SOURCE_DIR)
-	$(NOECHO)echo Cloning the Binutils repo
-	$(NOECHO)$(GIT_CMD) $(BINUTILS_REPO) $(SOURCE_DIR)/binutils 1>/dev/null 2>&1
-endif
-ifeq (,$(wildcard $(SOURCE_DIR)/gcc))
-	$(NOECHO)mkdir -p $(SOURCE_DIR)
-	$(NOECHO)echo Cloning the GCC repo
-	$(NOECHO)$(GIT_CMD) $(GCC_REPO) $(SOURCE_DIR)/gcc 1>/dev/null 2>&1
-	$(NOECHO)sed -i 's@gcm.cache@build/gcm.cache@g' $(SOURCE_DIR)/gcc/gcc/cp/mapper-client.cc
-    $(NOECHO)sed -i 's@gcm.cache@build/gcm.cache@g' $(SOURCE_DIR)/gcc/c++tools/server.cc
-endif
-endif
 
 clean:
 	$(NOECHO)rm -rf $(OUT_DIR)

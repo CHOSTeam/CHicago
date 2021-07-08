@@ -1,7 +1,7 @@
 # File author is Ítalo Lima Marconato Matias
 #
 # Created on December 31 of 2020, at 13:45 BRT
-# Last edited on January 22 of 2021, at 15:06 BRT
+# Last edited on July 04 of 2021, at 15:21 BRT
 
 VERBOSE ?= false
 
@@ -22,8 +22,12 @@ ifneq ($(VERBOSE),true)
 NOECHO := @
 endif
 
-build: prepare
-ifeq (,$(wildcard $(OUT_DIR)/bin))
+$(OUT_DIR)/bin:
+ifeq (,$(wildcard $(SOURCE_DIR)/llvm-mingw))
+	$(NOECHO)mkdir -p $(SOURCE_DIR)
+	$(NOECHO)echo Cloning the LLVM-MinGW repo
+	$(NOECHO)$(GIT_CMD) $(LLVM_MINGW_REPO) $(SOURCE_DIR)/llvm-mingw 1>/dev/null 2>&1
+endif
 	$(NOECHO)echo Building LLVM
 	$(NOECHO)cd $(SOURCE_DIR)/llvm-mingw && ./build-llvm.sh $(OUT_DIR) 1>/dev/null 2>&1
 	$(NOECHO)echo Building the wrappers
@@ -32,16 +36,6 @@ ifeq (,$(wildcard $(OUT_DIR)/bin))
 	$(NOECHO)cd $(SOURCE_DIR)/llvm-mingw &&./build-mingw-w64.sh $(OUT_DIR) --with-default-msvcrt=msvcrt 1>/dev/null 2>&1
 	$(NOECHO)echo Building Compiler-RT
 	$(NOECHO)cd $(SOURCE_DIR)/llvm-mingw &&./build-compiler-rt.sh $(OUT_DIR) 1>/dev/null 2>&1
-endif
-
-prepare:
-ifeq (,$(wildcard $(OUT_DIR)/bin))
-ifeq (,$(wildcard $(SOURCE_DIR)/llvm-mingw))
-	$(NOECHO)mkdir -p $(SOURCE_DIR)
-	$(NOECHO)echo Cloning the LLVM-MinGW repo
-	$(NOECHO)$(GIT_CMD) $(LLVM_MINGW_REPO) $(SOURCE_DIR)/llvm-mingw 1>/dev/null 2>&1
-endif
-endif
 
 clean:
 	$(NOECHO)rm -rf $(OUT_DIR)

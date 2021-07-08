@@ -1,15 +1,14 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 28 of 2021, at 09:16 BRT
- * Last edited on February 12 of 2021 at 12:09 BRT */
+ * Last edited on July 04 of 2021 at 19:29 BRT */
 
 #include <arch.h>
 #include <arch/mmu.h>
 #include <efi/lib.h>
 
-static inline UInt64 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Type) {
-    return Physical | MMU_PRESENT | ((Type != CH_MEM_KCODE && Type != CH_MEM_KDATA_RO) ? MMU_WRITE : 0) |
-                                    (Type == CH_MEM_KCODE ? 0 : MMU_NO_EXEC);
+static inline UInt64 MmuMakeEntry(EfiPhysicalAddress Physical, UInt8 Flags) {
+    return Physical | MMU_PRESENT | ((Flags & MAP_EXEC) ? 0 : MMU_NO_EXEC) | ((Flags & MAP_WRITE) ? MMU_WRITE : 0);
 }
 
 static Boolean MmuIsPresent(UInt64 Table) {
@@ -20,10 +19,8 @@ static Boolean MmuIsHuge(UInt64 Table) {
     return Table & MMU_HUGE;
 }
 
-static EfiStatus MmuMap(Void *Directory, CHMapping **List, CHMapping *Entry) {
-    if (Entry->Type == CH_MEM_MMU) {
-        return EFI_SUCCESS;
-    }
+static EfiStatus MmuMap(Void *Directory, Mapping **List, Mapping *Entry) {
+    if (!(Entry->Flags & MAP_VIRT)) return EFI_SUCCESS;
 
     EfiStatus status;
     UIntN start = 0, size = Entry->Size, level;
@@ -33,12 +30,9 @@ static EfiStatus MmuMap(Void *Directory, CHMapping **List, CHMapping *Entry) {
 s:  level = (UInt64)Directory;
 
     if (EFI_ERROR((status = CHWalkMmuLevel((UInt64*)level, List, Entry->Virtual + start, 39, 0x1FF,
-                                           MMU_PRESENT | MMU_WRITE, MmuIsPresent, MmuIsHuge, &level)))) {
-        return status;
-    } else if (EFI_ERROR((status = CHWalkMmuLevel((UInt64*)level, List, Entry->Virtual + start, 30, 0x1FF,
-                                                  MMU_PRESENT | MMU_WRITE, MmuIsPresent, MmuIsHuge, &level)))) {
-        return status;
-    }
+                                           MMU_PRESENT | MMU_WRITE, MmuIsPresent, MmuIsHuge, &level))) ||
+        EFI_ERROR((status = CHWalkMmuLevel((UInt64*)level, List, Entry->Virtual + start, 30, 0x1FF,
+                                           MMU_PRESENT | MMU_WRITE, MmuIsPresent, MmuIsHuge, &level)))) return status;
 
     /* Now the rest is exactly like arm64 (except for the page flags, though that is handled on MmuMakeEntry). And by
      * that I mean that first we map what we can with 2MiB pages (jumping to the beginning if needed), and then we map
@@ -46,60 +40,47 @@ s:  level = (UInt64)Directory;
 
     while (!(((Entry->Virtual + start) & 0x1FFFFF) || ((Entry->Physical + start) & 0x1FFFFF)) && size >= 0x200000) {
         ((UInt64*)level)[((Entry->Virtual + start) >> 21) & 0x1FF] = MmuMakeEntry(Entry->Physical + start,
-                                                                                  Entry->Type) | MMU_HUGE;
+                                                                                  Entry->Flags) | MMU_HUGE;
         start += 0x200000;
         size -= 0x200000;
 
-        if ((((Entry->Virtual + start) >> 30) & 0x1FF) != (((Entry->Virtual + start - 0x200000) >> 30) & 0x1FF)) {
-            goto s;
-        }
+        if ((((Entry->Virtual + start) >> 30) & 0x1FF) != (((Entry->Virtual + start - 0x200000) >> 30) & 0x1FF)) goto s;
     }
 
     if (EFI_ERROR((status = CHWalkMmuLevel((UInt64*)level, List, Entry->Virtual + start, 21, 0x1FF,
-                                           MMU_PRESENT | MMU_WRITE, MmuIsPresent, MmuIsHuge, &level)))) {
-        return status;
-    }
+                                           MMU_PRESENT | MMU_WRITE, MmuIsPresent, MmuIsHuge, &level)))) return status;
 
     while (size) {
         ((UInt64*)level)[((Entry->Virtual + start) >> 12) & 0x1FF] = MmuMakeEntry(Entry->Physical + start,
-                                                                                  Entry->Type);
+                                                                                  Entry->Flags);
         start += 0x1000;
         size -= 0x1000;
 
-        if ((((Entry->Virtual + start) >> 21) & 0x1FF) != (((Entry->Virtual + start - 0x1000) >> 21) & 0x1FF)) {
-            goto s;
-        }
+        if ((((Entry->Virtual + start) >> 21) & 0x1FF) != (((Entry->Virtual + start - 0x1000) >> 21) & 0x1FF)) goto s;
     }
 
     return EFI_SUCCESS;
 }
 
-EfiStatus ArchInitCHicagoMmu(UInt16, CHMapping **List, Void **Out) {
-    if (List == Null || *List == Null || Out == Null) {
-        return EFI_INVALID_PARAMETER;
-    } else if (!ArchGetFeatures(MenuEntryCHicago)) {
-        return EFI_UNSUPPORTED;
-    }
+EfiStatus ArchInitCHicagoMmu(UInt16, Mapping **List, Void **Out) {
+    if (List == Null || *List == Null || Out == Null) return EFI_INVALID_PARAMETER;
+    else if (!ArchGetFeatures(MenuEntryCHicago)) return EFI_UNSUPPORTED;
 
     /* Allocate the PML4 pointer. */
 
     EfiStatus status;
     EfiPhysicalAddress addr;
 
-    if ((*List = CHAddMapping(*List, UINT64_MAX, 0x1000, CH_MEM_MMU, &addr, True)) == Null || !addr) {
-        return EFI_OUT_OF_RESOURCES;
-    }
+    if ((*List = AddMapping(*List, UINTN_MAX, &addr, 0x1000, 0)) == Null || !addr) return EFI_OUT_OF_RESOURCES;
 
     UInt64 *pd = *Out = (UInt64*)addr;
 
     EfiZeroMemory(pd, 0x1000);
 
     /* Now we can go and map everything (including the jump function), and also create the recursive mapping entry (btw,
-     * we REALLY need to put this part of the code in some arch-indepdendent file). */
+     * we REALLY need to put this part of the code in some arch-independent file). */
 
-    if (EFI_ERROR((status = CHMapKernel(pd, List, MmuMap)))) {
-        return status;
-    }
+    if (EFI_ERROR((status = CHMapKernel(pd, List, MmuMap)))) return status;
 
     pd[511] = addr | MMU_PRESENT | MMU_WRITE;
 

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 12:42 BRT
- * Last edited on January 25 of 2021 at 14:17 BRT */
+ * Last edited on June 06 of 2021 at 11:23 BRT */
 
 #pragma once
 
@@ -100,7 +100,7 @@
 
 #define EFI_GEOMETRIC_SHAPE_UP_TRIANGLE 0x25B2
 #define EFI_GEOMETRIC_SHAPE_RIGHT_TRIANGLE 0x25BA
-#define EFI_GEOMETRIC_SHAPE_DOWN_TRIAGLE 0x25BC
+#define EFI_GEOMETRIC_SHAPE_DOWN_TRIANGLE 0x25BC
 #define EFI_GEOMETRIC_SHAPE_LEFT_TRIANGLE 0x25C4
 
 /* And, at last, EFI required arrow shapes (well, we still have more things, but they are for the other functions). */
@@ -128,7 +128,7 @@
 #define EFI_YELLOW 0x0E
 #define EFI_WHITE 0x0F
 
-/* And a macro to convert the fg+bg into an attribute value/single byte (remebering that the only valid bg colors are:
+/* And a macro to convert the fg+bg into an attribute value/single byte (remembering that the only valid bg colors are:
  * black, blue, green, cyan, red, magenta, brown and light gray). */
 
 #define EFI_ATTR(fg, bg) ((fg) | ((bg) << 4))

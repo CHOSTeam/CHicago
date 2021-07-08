@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:13 BRT
- * Last edited on February 15 of 2021, at 21:04 BRT */
+ * Last edited on July 08 of 2021, at 08:51 BRT */
 
 #include <cstring>
 #include <iostream>
@@ -86,14 +86,14 @@ int main(int argc, char **argv) {
 
     if (file.fail()) {
         cout << "Error: Couldn't create the SIA file (" << dest << ")." << endl;
-        return false;
+        return 1;
     }
 
     sia_t sia = { file, header, 0, 0 };
 
     if (!sia_init(sia)) {
         file.close();
-        return false;
+        return 1;
     }
 
     /* Now let's create all the root images. */
@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
     for (string root : roots) {
         if (!sia_add_image(sia, root)) {
             file.close();
-            return false;
+            return 1;
         }
     }
 
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
     for (string kernel : kernels) {
         if (!(kernel[0] >= '0' && kernel[0] <= '9')) {
             cout <<  "Error: Expected the kernel flags before the kernel file name." << endl;
-            return false;
+            return 1;
         }
 
         size_t pos;
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
 
         if (kernel[pos] != ':') {
             cout << "Error: Expected a colon after the kernel flags." << endl;
-            return false;
+            return 1;
         }
 
         string base = kernel.substr(pos + 1);
@@ -128,10 +128,10 @@ int main(int argc, char **argv) {
 
         if (pos == string::npos) {
             cout << "Error: Expected a colon after the kernel file name." << endl;
-            return false;
+            return 1;
         } else if (!sia_add_kernel(sia, base.substr(0, pos), base.substr(pos + 1), flags)) {
             file.close();
-            return false;
+            return 1;
         }
     }
 
