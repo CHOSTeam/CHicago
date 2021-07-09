@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on July 08 of 2021 at 08:32 BRT */
+ * Last edited on July 09 of 2021 at 10:24 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -540,7 +540,8 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     UIntN regv = (UIntN)end;
 
-    if ((list = AddMapping(list, end, &addr, asize = (((maxaddr - minaddr) >> 12) * sizeof(UIntN) * 5 + 0xFFF) & ~0xFFF,
+    if ((list = AddMapping(list, end, &addr,
+                           asize = (((maxaddr - minaddr) >> 12) * (sizeof(UIntN) * 4 + 1) + 0xFFF) & ~0xFFF,
                            MAP_VIRT | MAP_WRITE)) == Null || !addr) {
         EfiFreePool(map);
         return EFI_OUT_OF_RESOURCES;
