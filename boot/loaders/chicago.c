@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on July 09 of 2021 at 10:24 BRT */
+ * Last edited on July 10 of 2021 at 12:01 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -496,7 +496,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     /* Get and the ACPI tables location (EfiGetAcpiTables return the start of the RSDT/XSDT). */
 
     Boolean xsdt;
-    UIntN sdt = (EfiPhysicalAddress)EfiGetAcpiTables(&xsdt);
+    UInt64 sdt = (EfiPhysicalAddress)EfiGetAcpiTables(&xsdt);
 
     if (!sdt) {
         EfiDrawString("Couldn't get the ACPI RDST/XSDT.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);

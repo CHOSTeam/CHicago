@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on July 06 of 2021 at 21:06 BRT */
+ * Last edited on July 10 of 2021 at 12:00 BRT */
 
 #pragma once
 
@@ -60,7 +60,7 @@ typedef struct __attribute__((packed)) {
     struct __attribute__((packed)) {
         Boolean Extended;
         UInt32 Size;
-        UIntN Sdt;
+        UInt64 Sdt;
     } Acpi;
 
     struct __attribute__((packed)) {
