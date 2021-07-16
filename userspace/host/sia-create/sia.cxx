@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:38 BRT
- * Last edited on February 08 of 2021, at 18:32 BRT */
+ * Last edited on July 16 of 2021, at 00:00 BRT */
 
 #include <cstring>
 #include <experimental/filesystem>
@@ -26,11 +26,8 @@ static vector<string> tokenize(const string &path) {
         if (!tok.compare(".") || tok.empty() ||
             (!tok.compare("..") && ret.size() < 1)) {
             continue;
-        } else if (!tok.compare("..")) {
-            ret.pop_back();
-        } else {
-            ret.push_back(tok);
-        }
+        } else if (!tok.compare("..")) ret.pop_back();
+        else ret.push_back(tok);
     }
 
     return ret;
@@ -55,34 +52,22 @@ static void gen_id(uint8_t *buf) {
 
     /* And generate the random number(s). */
 
-    for (uint64_t i = 0; i < 16; i++) {
-        buf[i] = dist(rng);
-    }
+    for (uint64_t i = 0; i < 16; i++) buf[i] = dist(rng);
 }
 
 /* Helper functions for reading/writing into/from any point of a file. */
 
 static bool read_bytes(fstream &file, void *data, uint64_t size, uint64_t off) {
     file.seekg(off);
-
-    if (file.fail()) {
-        return false;
-    }
-
+    if (file.fail()) return false;
     file.read(reinterpret_cast<char*>(data), size);
-
     return !file.fail();
 }
 
 static bool write_bytes(fstream &file, void *data, uint64_t size, uint64_t off) {
     file.seekg(off);
-
-    if (file.fail()) {
-        return false;
-    }
-
+    if (file.fail()) return false;
     file.write(reinterpret_cast<char*>(data), size);
-
     return !file.fail();
 }
 
@@ -115,7 +100,6 @@ static bool alloc_data_entry_int(fstream &file, uint64_t off) {
      * other function) specified. */
 
     sia_data_t data = { 0 };
-
     return write_bytes(file, &data, sizeof(sia_data_t), off);
 }
 
@@ -135,48 +119,33 @@ static bool file_write(fstream &hfile, sia_file_t &file, uint64_t foff, const vo
 
     /* First write to this file? So create the initial data struct. */
 
-    if (last == 0) {
-        if (!(file.offset = last = alloc_data_entry(hfile))) {
-            return false;
-        }
-    }
+    if (last == 0 && !(file.offset = last = alloc_data_entry(hfile))) return false;
 
     /* Let's write the contents of the buffer into the SIA file. */
 
     while (size) {		
         /* Read the data struct. */
 
-        if (!read_bytes(hfile, &data, sizeof(sia_data_t), last)) {
-            return false;
-        }
+        if (!read_bytes(hfile, &data, sizeof(sia_data_t), last)) return false;
 
         /* Copy the contents of the current "sector" of the buffer into the current data buffer. */
 
         uint64_t sz = sizeof(sia_data_t::data);
-
-        if (sz > size) {
-            sz = size;
-        }
+        if (sz > size) sz = size;
 
         memcpy(data.data, static_cast<const char*>(buf) + ret, sz);
 
         /* And write it back into the SIA file. */
 
-        if (!write_bytes(hfile, &data, sizeof(sia_data_t), last)) {
-            return false;
-        }
-
+        if (!write_bytes(hfile, &data, sizeof(sia_data_t), last)) return false;
         ret += sz;
         size -= sz;
 
         /* If the next entry isn't allocated, and we still have data to copy, allocate a new entry. */
 
         if (!data.next && size) {
-            if (!(data.next = alloc_data_entry(hfile))) {
-                return false;
-            } else if (!write_bytes(hfile, &data, sizeof(sia_data_t), last)) {
-                return false;
-            }
+            if (!(data.next = alloc_data_entry(hfile))) return false;
+            else if (!write_bytes(hfile, &data, sizeof(sia_data_t), last)) return false;
         }
 
         last = data.next;
@@ -194,13 +163,9 @@ static bool get_image(fstream &hfile, sia_header_t &header, uint8_t num, sia_fil
      * the image num is inside the valid range, and if the offset isn't zero (after that, it's just reading the struct
      * and saving the offset). */
 
-    if (num >= sizeof(sia_header_t::root_images) / sizeof(uint64_t)) {
-        return false;
-    } else if (!header.root_images[num]) {
-        return false;
-    } else if (!read_bytes(hfile, outf, sizeof(sia_file_t), header.root_images[num])) {
-        return false;
-    }
+    if (num >= sizeof(sia_header_t::root_images) / sizeof(uint64_t)) return false;
+    else if (!header.root_images[num]) return false;
+    else if (!read_bytes(hfile, outf, sizeof(sia_file_t), header.root_images[num])) return false;
 
     *outo = header.root_images[num];
 
@@ -210,9 +175,7 @@ static bool get_image(fstream &hfile, sia_header_t &header, uint8_t num, sia_fil
 static bool file_find(fstream &hfile, sia_file_t &dir, string name, sia_file_t *outf, uint64_t *outo) {
     /* If the dir offset is 0, this directory doesn't have any files inside of it. */
 
-    if (dir.offset == 0) {
-        return false;
-    }
+    if (dir.offset == 0) return false;
 
     /* If it isn't 0, it's the offset for the first file inside of this directory, so let's read it, and start
      * searching! */
@@ -220,9 +183,7 @@ static bool file_find(fstream &hfile, sia_file_t &dir, string name, sia_file_t *
     uint64_t last = dir.offset;
     sia_file_t cur;
 
-    if (!read_bytes(hfile, &cur, sizeof(sia_file_t), last)) {
-        return false;
-    }
+    if (!read_bytes(hfile, &cur, sizeof(sia_file_t), last)) return false;
 
     while (true) {
         if (!string(cur.name).compare(name)) {
@@ -238,11 +199,8 @@ static bool file_find(fstream &hfile, sia_file_t &dir, string name, sia_file_t *
 
         last = cur.next;
 
-        if (last == 0) {
-            break;
-        } else if (!read_bytes(hfile, &cur, sizeof(sia_file_t), last)) {
-            return false;
-        }
+        if (last == 0) break;
+        else if (!read_bytes(hfile, &cur, sizeof(sia_file_t), last)) return false;
     }
 
     return false;
@@ -257,22 +215,15 @@ static bool link_file_entry(fstream &hfile, sia_file_t dir, sia_file_t file, uin
 		return write_bytes(hfile, &dir, sizeof(sia_file_t), last);
 	} else {
 		last = dir.offset;
-
-		if (!read_bytes(hfile, &dir, sizeof(sia_file_t), last)) {
-			return false;
-		}
+		if (!read_bytes(hfile, &dir, sizeof(sia_file_t), last)) return false;
 	}
 
 	string name(file.name);
 
 	while (dir.next != 0) {
 		last = dir.next;
-
-		if (!read_bytes(hfile, &dir, sizeof(sia_file_t), last)) {
-			return false;
-		} else if (name > dir.name) {
-		    break;
-		}
+		if (!read_bytes(hfile, &dir, sizeof(sia_file_t), last)) return false;
+		else if (name > dir.name) break;
 	}
 
 	/* If we're the last entry now, we can just set the .next field of the dir entry before us, else, we need to set
@@ -280,10 +231,7 @@ static bool link_file_entry(fstream &hfile, sia_file_t dir, sia_file_t file, uin
 
     if (dir.next != 0) {
         file.next = dir.next;
-
-        if (!write_bytes(hfile, &file, sizeof(sia_file_t), n)) {
-            return false;
-        }
+        if (!write_bytes(hfile, &file, sizeof(sia_file_t), n)) return false;
     }
 
 	dir.next = n;
@@ -378,9 +326,7 @@ static bool file_create(fstream &hfile, sia_header_t &header, uint8_t num, const
 	/* Time to write the contents of the file 'spath' into the file that we just created. Start by checking if we
 	 * really need to do this, and, by reading the source file. */
 
-	if (spath == "") {
-		return true;
-	}
+	if (spath == "") return true;
 
 	fstream stream(spath);
 
@@ -466,27 +412,14 @@ bool sia_add_image(sia_t &sia, string base) {
 
 			uint16_t dperms = 0;
 
-			if ((sperms & perms::owner_read) == perms::owner_read) {
-				dperms |= SIA_READ;
-			}
+			if ((sperms & perms::owner_read) == perms::owner_read) dperms |= SIA_READ;
+			if ((sperms & perms::owner_write) == perms::owner_write) dperms |= SIA_WRITE;
+			if ((sperms & perms::owner_exec) == perms::owner_exec) dperms |= SIA_EXEC;
 
-			if ((sperms & perms::owner_write) == perms::owner_write) {
-				dperms |= SIA_WRITE;
-			}
+			if (is_directory(p)) res = file_create(sia.file, sia.header, num, "", dfile, SIA_DIR | dperms);
+			else res = file_create(sia.file, sia.header, num, sfile, dfile, dperms);
 
-			if ((sperms & perms::owner_exec) == perms::owner_exec) {
-				dperms |= SIA_EXEC;
-			}
-
-			if (is_directory(p)) {
-				res = file_create(sia.file, sia.header, num, "", dfile, SIA_DIR | dperms);
-			} else {
-				res = file_create(sia.file, sia.header, num, sfile, dfile, dperms);
-			}
-
-			if (!res) {
-				return false;
-			}
+			if (!res) return false;
 		}
 	} catch (filesystem_error &err) {
 		cout << "Error: The base folder (" << base << ") doesn't exists or is a file." << endl;

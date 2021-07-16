@@ -1,14 +1,14 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 21 of 2021, at 14:55 BRT
- * Last edited on July 08 of 2021 at 08:49 BRT */
+ * Last edited on July 16 of 2021 at 10:40 BRT */
 
 #include <arch.h>
 #include <config.h>
 #include <efi/lib.h>
 #include <loader.h>
 
-static const Char8 *MenuName = "CHicago Boot Manager", *MenuVersion = "Version next-5";
+static const Char8 *MenuName = "CHicago Boot Manager", *MenuVersion = "Version next-6";
 static UIntN MenuEntryMax = 0, MenuEntryCount = 0;
 static MenuEntry **MenuEntries = Null;
 

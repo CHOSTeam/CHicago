@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 10:20 BRT
- * Last edited on February 08 of 2021, at 18:22 BRT */
+ * Last edited on July 16 of 2021, at 00:01 BRT */
 
 #pragma once
 
@@ -24,19 +24,13 @@ struct __attribute__((packed)) sia_header_t {
     uint32_t magic;
     uint16_t info;
     uint8_t id[16];
-    uint64_t free_file_count;
-    uint64_t free_file_offset;
-    uint64_t free_data_count;
-    uint64_t free_data_offset;
-    uint64_t kernel_images[16];
-    uint64_t root_images[16];
+    uint64_t free_file_count, free_file_offset, free_data_count, free_data_offset, kernel_images[16], root_images[16];
 };
 
 struct __attribute__((packed)) sia_file_t {
     uint64_t next;
     uint16_t flags;
-    uint64_t size;
-    uint64_t offset;
+    uint64_t size, offset;
     char name[64];
 };
 
@@ -48,8 +42,7 @@ struct __attribute__((packed)) sia_data_t {
 struct sia_t {
     std::fstream &file;
     sia_header_t &header;
-    int8_t last_kernel_image;
-    int8_t last_root_image;
+    int8_t last_kernel_image, last_root_image;
 };
 
 bool sia_add_image(sia_t&, std::string);
