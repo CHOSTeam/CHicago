@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on July 10 of 2021 at 12:01 BRT */
+ * Last edited on July 15 of 2021 at 12:27 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -25,49 +25,10 @@ SiaFile *CHGetKernel(SiaHeader *Header, UIntN Size, UInt16 Type, UInt16 *Feature
     return Null;
 }
 
-EfiStatus CHWalkMmuLevel(UIntN *Level, Mapping **List, EfiVirtualAddress Virtual, UInt8 Shift, UInt16 Mask,
-                         UInt16 Flags, Boolean (*IsPresent)(UIntN), Boolean (*IsHuge)(UIntN), UIntN *Out) {
-    /* This is just the arm64/amd64 MmuWalkLevel function, but made a bit more arch-independent (at least we can use it
-     * on both arm64 and amd64). */
-
-    UIntN tbl = Level[(Virtual >> Shift) & Mask];
-
-    if (!IsPresent(tbl)) {
-        /* Allocate/reserve memory for the table entry. */
-
-        EfiPhysicalAddress addr;
-        if ((*List = AddMapping(*List, UINTN_MAX, &addr, 0x1000, 0)) == Null || !addr) return EFI_OUT_OF_RESOURCES;
-        EfiZeroMemory((Void*)addr, 0x1000);
-        Level[(Virtual >> Shift) & Mask] = addr | Flags;
-        *Out = addr;
-    } else if (IsHuge(tbl)) {
-        EfiDrawString("The MMU paging structures got corrupted during the initialization process.",
-                      5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
-        return EFI_UNSUPPORTED;
-    } else *Out = tbl & ~0xFFF;
-
-    return EFI_SUCCESS;
-}
-
-EfiStatus CHMapKernel(Void *Directory, Mapping **List, EfiStatus (*Map)(Void*, Mapping**, Mapping*)) {
-    /* This function just maps the kernel and the jump address. */
-
-    Mapping sent = { 0x1000, MAP_KERNEL, MAP_VIRT | MAP_EXEC, (UInt64)ArchJumpIntoCHicago & ~0xFFF,
-                     (UInt64)ArchJumpIntoCHicago & ~0xFFF, Null, Null };
-    EfiStatus status = Map(Directory, List, &sent);
-
-    if (EFI_ERROR(status)) return status;
-
-    for (Mapping *ent = *List; ent != Null; ent = ent->Next)
-        if (EFI_ERROR((status = Map(Directory, List, ent)))) return status;
-
-    return EFI_SUCCESS;
-}
-
 static EfiStatus SiaCheck(UInt8 *Buffer, UIntN Size) {
     /* SIA (System Image Archive) is a TAR-like file format, used here on the osldr as the kernel/initrd container. It
-     * can contain kernel images for multiple "variants" of the same architecture (for example, one for arm64 with 48-bit
-     * VA support, and one for arm64 with 39-bit VA support), and also multiple root images/initrds. */
+     * can contain kernel images for multiple "variants" of the same architecture (for example, one for arm64 with
+     * 48-bit VA support, and one for arm64 with 39-bit VA support), and also multiple root images/initrds. */
 
     if (Size < sizeof(SiaHeader)) {
         EfiDrawString("The boot image file size is too small.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
@@ -496,7 +457,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     /* Get and the ACPI tables location (EfiGetAcpiTables return the start of the RSDT/XSDT). */
 
     Boolean xsdt;
-    UInt64 sdt = (EfiPhysicalAddress)EfiGetAcpiTables(&xsdt);
+    EfiPhysicalAddress sdt = EfiGetAcpiTables(&xsdt);
 
     if (!sdt) {
         EfiDrawString("Couldn't get the ACPI RDST/XSDT.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
@@ -585,8 +546,8 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     for (Mapping *cur = list; cur != Null; cur = cur->Next) {
         UInt8 type = cur->Type == MAP_RES ? CH_MEM_RES : (cur->Type == MAP_FREE ? CH_MEM_FREE :
-                     (cur->Flags & MAP_DEVICE ? CH_MEM_DEV : (cur->Flags & MAP_EXEC ? CH_MEM_KCODE :
-                     (cur->Flags & MAP_WRITE ? CH_MEM_KDATA : CH_MEM_KDATA_RO))));
+                     ((cur->Flags & MAP_DEVICE) ? CH_MEM_DEV : ((cur->Flags & MAP_EXEC) ? CH_MEM_KCODE :
+                     ((cur->Flags & MAP_WRITE) ? CH_MEM_KDATA : CH_MEM_KDATA_RO))));
 
         if (mmapc <= 0 ||
             cur->Physical != bi->MemoryMap.Entries[mmapc].Base + (bi->MemoryMap.Entries[mmapc].Count << 12) ||

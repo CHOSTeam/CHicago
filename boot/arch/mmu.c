@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on July 10 of 2021, at 16:56 BRT
- * Last edited on July 10 of 2021 at 17:44 BRT */
+ * Last edited on July 15 of 2021 at 12:26 BRT */
 
 static EfiStatus MoveInto(MMU_TYPE **Current, UIntN *Level, Mapping **List, EfiVirtualAddress Virtual,
                           EfiPhysicalAddress Physical, UIntN Size) {
@@ -11,7 +11,7 @@ static EfiStatus MoveInto(MMU_TYPE **Current, UIntN *Level, Mapping **List, EfiV
 
     while (*Level != MMU_DEST_LEVEL(Virtual, Physical, Size)) {
         UIntN i = MMU_INDEX(Virtual, *Level);
-        MMU_TYPE entry = (*Current)[i], *next = Null;
+        MMU_TYPE *next = Null, entry = (*Current)[i];
 
         if (!MMU_IS_PRESENT(entry)) {
             EfiPhysicalAddress addr;
@@ -65,6 +65,7 @@ static EfiStatus MapAddress(Void *Directory, Mapping **List, Mapping *Entry) {
 static EfiStatus InitDirectory(Mapping **List, Void **Out) {
     /* Alloc the page dir and convert it into a pointer (for MapAddress). */
 
+    EfiStatus status;
     EfiPhysicalAddress addr;
 
     if ((*List = AddMapping(*List, UINTN_MAX, &addr, 0x1000, 0)) == Null || !addr)
@@ -72,10 +73,12 @@ static EfiStatus InitDirectory(Mapping **List, Void **Out) {
 
     MMU_TYPE *pd = *Out = (MMU_TYPE*)addr;
 
-    /* Clean the pagedir and setup recursive paging, the virt->phys mappings themselves have to be done by the caller
-     * (using MapAddress). */
+    /* Clean the pagedir, setup recursive paging, and do all the virt->phys mappings that we can do. */
 
     EfiZeroMemory(pd, 0x1000);
+
+    for (Mapping *cur = *List; cur != Null; cur = cur->Next)
+        if (EFI_ERROR((status = MapAddress(*Out, List, cur)))) return status;
 
 #ifdef MMU_SETUP_RECURSIVE
     MMU_SETUP_RECURSIVE();
@@ -86,11 +89,13 @@ static EfiStatus InitDirectory(Mapping **List, Void **Out) {
 
 EfiStatus ArchInitCHicagoMmu(UInt16, Mapping **List, Void **Out) {
     EfiStatus status;
+    Mapping ent = { 0x1000, MAP_KERNEL, MAP_VIRT | MAP_EXEC, (UInt64)ArchJumpIntoCHicago & ~0xFFF,
+                    (UInt64)ArchJumpIntoCHicago & ~0xFFF, Null, Null };
 
     if (List == Null || *List == Null || Out == Null) return EFI_INVALID_PARAMETER;
     else if (!ArchGetFeatures(MenuEntryCHicago)) return EFI_UNSUPPORTED;
     else if (EFI_ERROR((status = InitDirectory(List, Out)))) return status;
-    else if (EFI_ERROR((status = CHMapKernel(*Out, List, MapAddress)))) return status;
+    else if (EFI_ERROR((status = MapAddress(*Out, List, &ent)))) return status;
 
     return EFI_SUCCESS;
 }

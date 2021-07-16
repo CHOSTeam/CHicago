@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on July 04 of 2021, at 12:25 BRT
- * Last edited on July 06 of 2021 at 18:54 BRT */
+ * Last edited on July 10 of 2021 at 20:11 BRT */
 
 #include <efi/lib.h>
 #include <util.h>
@@ -25,17 +25,16 @@ static Boolean CheckOverlap(UInt64 Pos11, UInt64 Pos12, UInt64 Pos21, UInt64 Pos
      * overlap check). */
 
     if (Pos11 > Pos21) {
-        UInt64 tmp1 = Pos21, tmp2 = Pos22;
+        UInt64 tmp = Pos21;
         Pos21 = Pos11;
-        Pos22 = Pos12;
-        Pos11 = tmp1;
-        Pos12 = tmp2;
+        Pos12 = Pos22;
+        Pos11 = tmp;
     }
 
     return Pos11 <= Pos21 && Pos12 > Pos21;
 }
 
-static Mapping *InsertMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysicalAddress Physical, UIntN Size,
+static Mapping *InsertMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysicalAddress Physical, UInt64 Size,
                               UInt8 Type, UInt8 Flags) {
     /* First entry needs no special checking (only InitMappings() should need this tho). */
 
@@ -119,8 +118,8 @@ static Mapping *InsertMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysi
     return List;
 }
 
-Mapping *AddMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysicalAddress *Physical, UIntN Size, UInt8 Flags) {
-    UIntN pages = (Size + 0xFFF) >> 12, size = pages << 12;
+Mapping *AddMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysicalAddress *Physical, UInt64 Size, UInt8 Flags) {
+    UInt64 pages = (Size + 0xFFF) >> 12, size = pages << 12;
 
     if (((Flags & MAP_VIRT) && !(Virtual &= ~0xFFF)) || Physical == Null || !Size) return Null;
     else if (!(Flags & MAP_DEVICE) && !(*Physical = EfiAllocatePages(pages))) {
@@ -170,7 +169,7 @@ Mapping *AddMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysicalAddress
                 ent->Size = cur->Physical + cur->Size - *Physical - size;
                 ent->Type = cur->Type;
                 ent->Flags = cur->Flags;
-                ent->Virtual = UINT64_MAX;
+                ent->Virtual = UINTN_MAX;
                 ent->Physical = *Physical + Size;
                 ent->Prev = cur;
                 ent->Next = cur->Next;
@@ -205,8 +204,8 @@ Mapping *InitMappings(Void) {
     }
 
     for (UIntN i = 0; i < mcount; i++) {
-        EfiMemoryDescriptor *desc = (EfiMemoryDescriptor*)((UIntN)map + i * dsize);
-        Mapping *res = InsertMapping(list, UINT64_MAX, desc->PhysicalStart, desc->NumberOfPages << 12,
+        EfiMemoryDescriptor *desc = (EfiMemoryDescriptor*)((EfiPhysicalAddress)map + i * dsize);
+        Mapping *res = InsertMapping(list, UINTN_MAX, desc->PhysicalStart, desc->NumberOfPages << 12,
                                      desc->Type == EfiBootServicesData || desc->Type == EfiBootServicesCode ||
                                      desc->Type == EfiRuntimeServicesData || desc->Type == EfiRuntimeServicesCode ||
                                      desc->Type == EfiLoaderData || desc->Type == EfiLoaderCode ||

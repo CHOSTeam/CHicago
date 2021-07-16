@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on July 04 of 2021, at 12:23 BRT
- * Last edited on July 06 of 2021 at 18:54 BRT */
+ * Last edited on July 10 of 2021 at 20:10 BRT */
 
 #pragma once
 
@@ -17,12 +17,12 @@
 #define MAP_DEVICE 0x08
 
 typedef struct _Mapping {
-    UIntN Size;
+    UInt64 Size;
     UInt8 Type, Flags;
     EfiVirtualAddress Virtual;
     EfiPhysicalAddress Physical;
     struct _Mapping *Next, *Prev;
 } Mapping;
 
-Mapping *AddMapping(Mapping*, EfiVirtualAddress, EfiPhysicalAddress*, UIntN, UInt8);
+Mapping *AddMapping(Mapping*, EfiVirtualAddress, EfiPhysicalAddress*, UInt64, UInt8);
 Mapping *InitMappings(Void);

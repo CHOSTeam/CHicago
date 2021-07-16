@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 17:31 BRT
- * Last edited on March 11 of 2021 at 18:31 BRT */
+ * Last edited on July 10 of 2021 at 20:12 BRT */
 
 #pragma once
 
@@ -85,4 +85,4 @@ EfiMemoryDescriptor *EfiGetMemoryMap(UIntN*, UIntN*, UIntN*, UInt32*);
 EfiStatus EfiOpenFile(Char16*, UInt8, EfiFile**);
 UIntN EfiGetFileSize(EfiFile*);
 
-const Void *EfiGetAcpiTables(Boolean*);
+EfiPhysicalAddress EfiGetAcpiTables(Boolean*);

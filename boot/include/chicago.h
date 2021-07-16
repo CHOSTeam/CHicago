@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:47 BRT
- * Last edited on July 10 of 2021 at 12:00 BRT */
+ * Last edited on July 15 of 2021 at 12:23 BRT */
 
 #pragma once
 
@@ -86,6 +86,3 @@ typedef struct __attribute__((packed)) {
 } CHBootInfo;
 
 SiaFile *CHGetKernel(SiaHeader*, UIntN, UInt16, UInt16*);
-EfiStatus CHWalkMmuLevel(UIntN*, Mapping**, EfiVirtualAddress, UInt8, UInt16, UInt16, Boolean (*)(UIntN),
-                         Boolean (*)(UIntN), UIntN*);
-EfiStatus CHMapKernel(Void*, Mapping**, EfiStatus (*)(Void*, Mapping**, Mapping*));

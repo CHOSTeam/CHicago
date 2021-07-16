@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 31 of 2021, at 13:45 BRT
- * Last edited on July 06 of 2021 at 20:07 BRT */
+ * Last edited on July 15 of 2021 at 12:16 BRT */
 
 #include <arch.h>
 #include <stddef.h>
@@ -44,8 +44,8 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
     /* Disable interrupts/exceptions/IRQs, enable some required things (like large/huge pages), set the new pagedir,
      * and jump to the kernel!
      * On amd64, we have to remember to set the NXE bit on the EFER, else, we may crash on systems that the firmware
-     * doesn't enable it by default. And we also have to remember to disable PAE on x86 if it is enabled (as we don't
-     * support it yet).
+     * doesn't enable it by default. And we also have to remember to disable PAE on x86 if it is enabled (and it
+     * probably is).
      * Also on x86, we have to take caution with the stack alignment, as we have one push instruction before the call
      * (and the System V ABI expects the stack to be 16-bytes aligned before the call). */
 
