@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on July 10 of 2021, at 16:56 BRT
- * Last edited on July 18 of 2021 at 11:42 BRT */
+ * Last edited on July 18 of 2021 at 14:54 BRT */
 
 static EfiStatus MoveInto(MMU_TYPE **Current, UIntN *Level, Mapping **List, EfiVirtualAddress Virtual,
                           EfiPhysicalAddress Physical, UIntN Size) {
@@ -19,15 +19,15 @@ static EfiStatus MoveInto(MMU_TYPE **Current, UIntN *Level, Mapping **List, EfiV
 
             if (list == Null || !addr) return EFI_OUT_OF_RESOURCES;
             EfiZeroMemory((Void*)addr, 0x1000);
-            (*Current)[i] = MMU_MAKE_TABLE(addr, lvl);
+            (*Current)[i] = MMU_MAKE_TABLE(addr, *Level);
 
-            next = (MMU_TYPE*)(addr & ~MMU_ENTRY_MASK(lvl));
+            next = (MMU_TYPE*)(addr & ~MMU_ENTRY_MASK(*Level));
             *List = list;
         } else if (MMU_IS_HUGE(entry)) {
             EfiDrawString("The MMU paging structures got corrupted during the initialization process.",
                           5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
             return EFI_UNSUPPORTED;
-        } else next = (MMU_TYPE*)(entry & ~MMU_ENTRY_MASK(lvl));
+        } else next = (MMU_TYPE*)(entry & ~MMU_ENTRY_MASK(*Level));
 
         *Current = next;
         (*Level)++;

@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 17:26 BRT
- * Last edited on July 06 of 2021 at 20:07 BRT */
+ * Last edited on July 18 of 2021 at 12:40 BRT */
 
 #include <chicago.h>
 #include <efi/lib.h>
@@ -18,6 +18,9 @@ UInt16 ArchGetFeatures(MenuEntryType Type) {
 
     if (!(edx & 0x08)) {
         EfiDrawString("This CPU doesn't support PSE.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
+        return 0;
+    } else if (!(edx & 0x40)) {
+        EfiDrawString("This CPU doesn't support PAE.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         return 0;
     } else if (!(ecx & 0x1000)) {
         EfiDrawString("This CPU doesn't support FMA.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
