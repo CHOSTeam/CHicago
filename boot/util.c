@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on July 04 of 2021, at 12:25 BRT
- * Last edited on July 10 of 2021 at 20:11 BRT */
+ * Last edited on July 18 of 2021 at 11:40 BRT */
 
 #include <efi/lib.h>
 #include <util.h>
@@ -118,11 +118,12 @@ static Mapping *InsertMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysi
     return List;
 }
 
-Mapping *AddMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysicalAddress *Physical, UInt64 Size, UInt8 Flags) {
+Mapping *AddMapping(Mapping *List, EfiVirtualAddress Virtual, EfiPhysicalAddress *Physical, EfiPhysicalAddress Max,
+                    UInt64 Size, UInt8 Flags) {
     UInt64 pages = (Size + 0xFFF) >> 12, size = pages << 12;
 
     if (((Flags & MAP_VIRT) && !(Virtual &= ~0xFFF)) || Physical == Null || !Size) return Null;
-    else if (!(Flags & MAP_DEVICE) && !(*Physical = EfiAllocatePages(pages))) {
+    else if (!(Flags & MAP_DEVICE) && !(*Physical = Max ? EfiAllocateLowPages(pages, Max) : EfiAllocatePages(pages))) {
         EfiDrawString("The system is out of memory (couldn't alloc physical memory).", 5, EfiFont.Height + 15,
                       0xFF, 0xFF, 0xFF);
         return Null;
@@ -210,18 +211,17 @@ Mapping *InitMappings(Void) {
                                      desc->Type == EfiRuntimeServicesData || desc->Type == EfiRuntimeServicesCode ||
                                      desc->Type == EfiLoaderData || desc->Type == EfiLoaderCode ||
                                      desc->Type == EfiConventionalMemory ? MAP_FREE : MAP_RES, 0);
-        if (res == Null) {
-            while (list != Null) {
-                Mapping *cur = list;
-                list = list->Next;
-                EfiFreePool(cur);
-            }
-
-            return Null;
-        }
-
+        if (res == Null) return FreeMappings(list), Null;
         list = res;
     }
 
     return list;
+}
+
+Void FreeMappings(Mapping *List) {
+    while (List != Null) {
+        Mapping *cur = List;
+        List = List->Next;
+        EfiFreePool(cur);
+    }
 }

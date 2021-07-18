@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on July 10 of 2021, at 16:56 BRT
- * Last edited on July 15 of 2021 at 12:26 BRT */
+ * Last edited on July 18 of 2021 at 11:42 BRT */
 
 static EfiStatus MoveInto(MMU_TYPE **Current, UIntN *Level, Mapping **List, EfiVirtualAddress Virtual,
                           EfiPhysicalAddress Physical, UIntN Size) {
@@ -15,10 +15,14 @@ static EfiStatus MoveInto(MMU_TYPE **Current, UIntN *Level, Mapping **List, EfiV
 
         if (!MMU_IS_PRESENT(entry)) {
             EfiPhysicalAddress addr;
-            if ((*List = AddMapping(*List, UINTN_MAX, &addr, 0x1000, 0)) == Null || !addr) return EFI_OUT_OF_RESOURCES;
+            Mapping *list = AddMapping(*List, UINTN_MAX, &addr, 0, 0x1000, 0);
+
+            if (list == Null || !addr) return EFI_OUT_OF_RESOURCES;
             EfiZeroMemory((Void*)addr, 0x1000);
             (*Current)[i] = MMU_MAKE_TABLE(addr, lvl);
+
             next = (MMU_TYPE*)(addr & ~MMU_ENTRY_MASK(lvl));
+            *List = list;
         } else if (MMU_IS_HUGE(entry)) {
             EfiDrawString("The MMU paging structures got corrupted during the initialization process.",
                           5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
@@ -67,9 +71,10 @@ static EfiStatus InitDirectory(Mapping **List, Void **Out) {
 
     EfiStatus status;
     EfiPhysicalAddress addr;
+    Mapping *list = AddMapping(*List, UINTN_MAX, &addr, UINT32_MAX, 0x1000, 0);
 
-    if ((*List = AddMapping(*List, UINTN_MAX, &addr, 0x1000, 0)) == Null || !addr)
-        return EFI_OUT_OF_RESOURCES;
+    if (list == Null || !addr) return EFI_OUT_OF_RESOURCES;
+    *List = list;
 
     MMU_TYPE *pd = *Out = (MMU_TYPE*)addr;
 

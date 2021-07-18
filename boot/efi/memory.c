@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 15 of 2021, at 20:09 BRT
- * Last edited on June 06 of 2021 at 11:19 BRT */
+ * Last edited on June 16 of 2021 at 19:19 BRT */
 
 #include <efi/lib.h>
 
@@ -93,6 +93,11 @@ Void *EfiReallocatePool(Void *Source, UIntN OldSize, UIntN NewSize) {
 EfiPhysicalAddress EfiAllocatePages(UIntN Pages) {
     EfiPhysicalAddress ret;
     return EFI_ERROR(EfiBS->AllocatePages(EfiAllocateAnyPages, EfiLoaderData, Pages, &ret)) ? 0 : ret;
+}
+
+EfiPhysicalAddress EfiAllocateLowPages(UIntN Pages, EfiPhysicalAddress Max) {
+    EfiPhysicalAddress ret = Max;
+    return EFI_ERROR(EfiBS->AllocatePages(EfiAllocateMaxAddress, EfiLoaderData, Pages, &ret)) ? 0 : ret;
 }
 
 Void EfiFreePool(Void *Pool) {

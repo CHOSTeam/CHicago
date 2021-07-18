@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 02 of 2021, at 17:31 BRT
- * Last edited on July 10 of 2021 at 20:12 BRT */
+ * Last edited on July 16 of 2021 at 19:19 BRT */
 
 #pragma once
 
@@ -77,6 +77,7 @@ Void *EfiAllocateZeroPool(UIntN);
 Void *EfiAllocateCopyPool(const Void*, UIntN);
 Void *EfiReallocatePool(Void*, UIntN, UIntN);
 EfiPhysicalAddress EfiAllocatePages(UIntN);
+EfiPhysicalAddress EfiAllocateLowPages(UIntN, EfiPhysicalAddress);
 Void EfiFreePool(Void*);
 Void EfiFreePages(EfiPhysicalAddress, UIntN);
 

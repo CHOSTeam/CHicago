@@ -1,22 +1,10 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 31 of 2021, at 13:45 BRT
- * Last edited on July 15 of 2021 at 12:16 BRT */
+ * Last edited on July 17 of 2021 at 17:33 BRT */
 
 #include <arch.h>
 #include <stddef.h>
-
-#ifndef __i386__
-static inline UInt64 ReadMSR(UInt32 Number) {
-    UInt32 lo, hi;
-    asm volatile("rdmsr" : "=a"(lo), "=d"(hi) : "c"(Number));
-    return ((UInt64)hi << 32) | lo;
-}
-
-static inline Void WriteMSR(UInt32 Number, UInt64 Value) {
-    asm volatile("wrmsr" :: "c"(Number), "a"((UInt32)Value), "d"((UInt32)(Value >> 32)));
-}
-#endif
 
 __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN Arg, UIntN Entry, UInt16) {
     if (BootInfo == Null) goto e;
@@ -65,7 +53,6 @@ __attribute__((noreturn)) Void ArchJumpIntoCHicago(CHBootInfo *BootInfo, UIntN A
                  "push %%ecx; call *%%ebx" :: "r"(Entry), "r"(Arg), "r"(sp + 4), "r"(BootInfo->Directory)
                                             : "%ebx", "%ecx", "%edx");
 #else
-    WriteMSR(0xC0000080, ReadMSR(0xC0000080) | 0x800);
     asm volatile("rdmsr" : "=a"(val1) : "c"(0xC0000080));
     asm volatile("wrmsr" :: "A"(val1 | 0x800), "c"(0xC0000080));
     asm volatile("mov %0, %%rbx; mov %1, %%rdi; mov %2, %%rsi; mov %3, %%cr3\n"

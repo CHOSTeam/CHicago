@@ -1,7 +1,7 @@
 /* File author is Ítalo Lima Marconato Matias
  *
  * Created on January 29 of 2021, at 16:41 BRT
- * Last edited on July 15 of 2021 at 12:27 BRT */
+ * Last edited on July 18 of 2021 at 11:46 BRT */
 
 #include <arch.h>
 #include <efi/lib.h>
@@ -203,13 +203,15 @@ static Void SiaLoadSymbols(UInt8 *Buffer, UIntN Size, SiaFile *File, UIntN *End,
 
     EfiPhysicalAddress addr;
     UIntN size = (*Count * sizeof(CHBootInfoSymbol) + namesize + 0xFFF) & ~0xFFF;
+    Mapping *list = AddMapping(*List, *End, &addr, 0, size, MAP_VIRT);
 
-    if ((*List = AddMapping(*List, *End, &addr, size, MAP_VIRT)) == Null || !addr) {
+    if (list == Null || !addr) {
         EfiFreePool(syms);
         *Count = 0;
         return;
     }
 
+    *List = list;
     EfiZeroMemory((Void*)addr, size);
 
     /* Also, as now everything is allocated, and we know the symbol entries are valid, we can't fail anymore lol. */
@@ -293,6 +295,8 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
     /* The sections all have both the virtual address (as we're supposed to jump into the kernel after enabling
      * paging) and the physical address, we need to load everything into the physical address space. */
 
+    Mapping *list;
+
     for (UIntN c = 0, i = 0; i < ehdr.ProgHeaderCount; i++) {
         /* And here we are fixing 0x1000 as the page size again lol. */
 
@@ -303,12 +307,13 @@ static EfiStatus SiaLoadKernel(UInt8 *Buffer, UIntN Size, UInt16 *Features, UInt
         /* The size in memory and size in the file may be different, so let's clean it first, and load what we need
          * into memory after that. */
 
-        if ((*List = AddMapping(*List, phdr->VirtAddress, &addr, size, MAP_VIRT |
-                                ((phdr->Flags & 0x01) ? MAP_EXEC : 0) |
-                                ((phdr->Flags & 0x02) ? MAP_WRITE : 0))) == Null || !addr) return status;
+        if ((list = AddMapping(*List, phdr->VirtAddress, &addr, 0, size, MAP_VIRT |
+                               ((phdr->Flags & 0x01) ? MAP_EXEC : 0) |
+                               ((phdr->Flags & 0x02) ? MAP_WRITE : 0))) == Null || !addr) return status;
         else if (phdr->VirtAddress < *Start) *Start = phdr->VirtAddress;
         if (phdr->VirtAddress + size > *End) *End = phdr->VirtAddress + size;
 
+        *List = list;
         EfiZeroMemory((Void*)addr, size);
 
         if (phdr->FileSize && EFI_ERROR((status = SiaReadFile(Buffer, Size, file, phdr->Offset, phdr->FileSize,
@@ -364,7 +369,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     /* Before anything else, read in the EFI memory map to initialize our mapping list. */
 
-    Mapping *list = InitMappings();
+    Mapping *list = InitMappings(), *nlist;
     if (list == Null) return EFI_OUT_OF_RESOURCES;
 
     /* Let's read in the SIA file (in whatever path it is), validate it, and load the best fit kernel into memory
@@ -379,19 +384,23 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     if (EFI_ERROR(status) || file == Null) {
         EfiDrawString("Failed to open the boot image file.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
+        FreeMappings(list);
         return status;
     } else if (!(size = EfiGetFileSize(file))) {
         EfiDrawString("Failed to get the boot image file size.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
+        FreeMappings(list);
         return status;
     } else if ((buf = EfiAllocatePool(size)) == Null) {
         EfiDrawString("The system is out of memory (couldn't allocate memory for reading the boot image).", 5,
                       EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         file->Close(file);
+        FreeMappings(list);
         return status;
     } else if (EFI_ERROR((status = file->Read(file, &size, buf)))) {
         EfiDrawString("Failed to read the boot image file.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
         EfiFreePool(buf);
         file->Close(file);
+        FreeMappings(list);
         return status;
     }
 
@@ -401,6 +410,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     if (EFI_ERROR((status = SiaLoadKernel(buf, size, &feat, &entry, &start, &end, &symstart, &symcnt, &list)))) {
         EfiFreePool(buf);
+        FreeMappings(list);
         return status;
     }
 
@@ -412,11 +422,13 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     UIntN biv = (UIntN)end;
     CHBootInfo *bi;
 
-    if ((list = AddMapping(list, end, &addr, asize, MAP_VIRT | MAP_WRITE)) == Null || !addr) {
+    if ((nlist = AddMapping(list, end, &addr, 0, asize, MAP_VIRT | MAP_WRITE)) == Null || !addr) {
         EfiFreePool(buf);
+        FreeMappings(list);
         return EFI_OUT_OF_RESOURCES;
     }
 
+    list = nlist;
     bi = (CHBootInfo*)addr;
     end += asize;
 
@@ -427,11 +439,13 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     UInt8 *nbuf, *nbufv = (UInt8*)end;
 
-    if ((list = AddMapping(list, end, &addr, (asize = (size + 0xFFF) & ~0xFFF), MAP_VIRT)) == Null || !addr) {
+    if ((nlist = AddMapping(list, end, &addr, 0, (asize = (size + 0xFFF) & ~0xFFF), MAP_VIRT)) == Null || !addr) {
         EfiFreePool(buf);
+        FreeMappings(list);
         return EFI_OUT_OF_RESOURCES;
     }
 
+    list = nlist;
     nbuf = (UInt8*)addr;
     end += asize;
 
@@ -447,11 +461,13 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     UIntN backv = (UIntN)end, frontv = (UIntN)end + (asize = (EfiGop->Mode->FrameBufferSize + 0xFFF) & ~0xFFF);
 
-    if ((list = AddMapping(list, end, &addr, asize, MAP_VIRT | MAP_WRITE | MAP_DEVICE)) == Null || !addr)
-        return EFI_OUT_OF_RESOURCES;
-    else if ((list = AddMapping(list, end + asize, &addr, asize, MAP_VIRT | MAP_WRITE)) == Null || !addr)
-        return EFI_OUT_OF_RESOURCES;
+    if ((nlist = AddMapping(list, end, &addr, 0, asize, MAP_VIRT | MAP_WRITE | MAP_DEVICE)) == Null || !addr)
+        return FreeMappings(list), EFI_OUT_OF_RESOURCES;
+    else if ((list = nlist, list = AddMapping(list, end + asize, &addr, 0, asize, MAP_VIRT | MAP_WRITE)) == Null ||
+              !addr)
+        return FreeMappings(list), EFI_OUT_OF_RESOURCES;
 
+    list = nlist;
     end += asize * 2;
 
     /* Get and the ACPI tables location (EfiGetAcpiTables return the start of the RSDT/XSDT). */
@@ -461,6 +477,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     if (!sdt) {
         EfiDrawString("Couldn't get the ACPI RDST/XSDT.", 5, EfiFont.Height + 15, 0xFF, 0xFF, 0xFF);
+        FreeMappings(list);
         return EFI_UNSUPPORTED;
     }
 
@@ -476,6 +493,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
     if (map == Null) {
         EfiDrawString("Couldn't get the memory map (the system may be out of memory).", 5, EfiFont.Height + 15,
                       0xFF, 0xFF, 0xFF);
+        FreeMappings(list);
         return EFI_OUT_OF_RESOURCES;
     }
 
@@ -501,13 +519,15 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     UIntN regv = (UIntN)end;
 
-    if ((list = AddMapping(list, end, &addr,
-                           asize = (((maxaddr - minaddr) >> 12) * (sizeof(UIntN) * 4 + 1) + 0xFFF) & ~0xFFF,
-                           MAP_VIRT | MAP_WRITE)) == Null || !addr) {
+    if ((nlist = AddMapping(list, end, &addr, 0,
+                            asize = (((maxaddr - minaddr) >> 12) * (sizeof(UIntN) * 4 + 1) + 0xFFF) & ~0xFFF,
+                            MAP_VIRT | MAP_WRITE)) == Null || !addr) {
         EfiFreePool(map);
+        FreeMappings(list);
         return EFI_OUT_OF_RESOURCES;
     }
 
+    list = nlist;
     end += asize;
 
     /* Fill in what we already can of the boot info struct. */
@@ -536,7 +556,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
 
     Void *dir;
 
-    if (EFI_ERROR((status = ArchInitCHicagoMmu(feat, &list, &dir)))) return status;
+    if (EFI_ERROR((status = ArchInitCHicagoMmu(feat, &list, &dir)))) return FreeMappings(list), status;
 
     bi->KernelEnd = end;
     bi->Directory = dir;
@@ -558,7 +578,7 @@ EfiStatus LdrStartCHicago(MenuEntry *Entry) {
         } else bi->MemoryMap.Entries[mmapc].Count += cur->Size >> 12;
     }
 
-    bi->MemoryMap.Count = mmapc;
+    bi->MemoryMap.Count = mmapc + 1;
 
     /* Now we can exit the EFI environment (and remember that after that no more boot services, not runtime services,
      * as we're not going to remap the RS memory). */
